@@ -1,8 +1,23 @@
-# Turn on rewrite engine
+# Disable directory listing
+Options -Indexes
+
+# Deny all files by default
+<FilesMatch ".*">
+    Require all denied
+</FilesMatch>
+
+# Allow index.php and asset files
+<FilesMatch "^(index\.php|.*\.(css|js|png|jpe?g|gif|ico|svg))$">
+    Require all granted
+</FilesMatch>
+
+# Enable URL rewriting
 RewriteEngine On
 
-# Allow access to PHP files
-RewriteCond %{REQUEST_FILENAME} !\.php$
+# Hide .php extension
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteRule ^([^/]+)$ $1.php [L]
 
-# Deny everything else
-RewriteRule ^ - [F,L]
+# Redirect /index.php to /
+RewriteRule ^index\.php$ / [R=301,L]

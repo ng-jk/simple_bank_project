@@ -1,0 +1,35 @@
+<script>
+window.addEventListener('load', function() {
+
+    /*
+    Window.{
+        serverData.{
+            data.{
+                column_name => colum_value
+            },
+            metadata.{
+                date_time => timestamp,
+                query_result => [success||failed],
+                query_error => [error message],
+                login_status => [login||not_login],
+            }
+        }
+    }
+    */
+    document.getElementById('hello_world').innerHTML = Window.serverData.data.hello_key;
+    document.getElementById('metadata').innerHTML = Window.serverData.metadata;
+    console.log('Page loaded And Data from PHP:', data);
+
+    // You can now use `data` here safely
+});
+</script>
+
+<html>
+    <head>
+        <title>something like this so you can write javascript only for the whole project</title>
+    </head>
+    <body>
+        <p id="hello_world"></p>
+        <p id="metadata"></p>
+    </body>
+</html>
