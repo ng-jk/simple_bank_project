@@ -1,0 +1,8 @@
+# Turn on rewrite engine
+RewriteEngine On
+
+# Allow access to PHP files
+RewriteCond %{REQUEST_FILENAME} !\.php$
+
+# Deny everything else
+RewriteRule ^ - [F,L]
