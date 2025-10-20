@@ -1,0 +1,5 @@
+{
+    "require": {
+        "web-token/jwt-framework": "^4.0"
+    }
+}

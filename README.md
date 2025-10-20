@@ -9,7 +9,7 @@ when POST use complete sql query, but skip the prefix, like
 is actually fetch user name from table `system_user`
 
 ## GET
-when GET use only status and secret, status is current status
+when GET use only status, secret, and query, query same as POST
 
 ## PUT, PATCH, DELETE
 depend on handler exist or not, if not it will treat as POST
@@ -23,7 +23,11 @@ before DOM start
 // this will load by backend before render frontend
 <script>
     window.serverData = {
-        data: <?= json_encode($raw_data_from_database) ?>
+        query1: <?= json_encode($raw_data_from_database) ?>
+        query2: <?= json_encode($raw_data_from_database) ?>
+        query3: <?= json_encode($raw_data_from_database) ?>
+        query4: <?= json_encode($raw_data_from_database) ?>
+        metadata: <?= json_encode($metadata)?>
         // ...
     };
 </script>
@@ -35,19 +39,21 @@ window.addEventListener('load', function() {
     /*
     Window.{
         serverData.{
-            data.{
+            query1.{
                 column_name => colum_value
             },
+            ...
             metadata.{
                 date_time => timestamp,
                 query_result => [success||failed],
                 query_error => [error message],
                 login_status => [login||not_login],
+                permission => ['user'||'admin'||'not_login']
             }
         }
     }
     */
-    document.getElementById('hello_world').innerHTML = Window.serverData.data.hello_key;
+    document.getElementById('hello_world').innerHTML = Window.serverData.query1.hello_key;
     document.getElementById('metadata').innerHTML = Window.serverData.metadata;
     console.log('Page loaded And Data from PHP:', data);
 
@@ -79,6 +85,21 @@ only contain router, spefify with request type
 depend on service needed
 add service php file into the folder
 
+### service naming convention
+service class naming convention is like:
+> [category]_[interface|basic|not-fill]_service.php
+class name is same as file name
+
+service data class naming convention is like:
+> [category].php
+class name is same as file name
+
+for example, for status service i will have
+> status.php
+> status_interface_service.php
+> status_service.php
+> status_basic_service.php
+
 ## controller folder
 main logic of every request, resolve status logic
 
@@ -87,3 +108,6 @@ contain database migration file
 
 ## model folder
 link to database, sanitize and validate data insert and retrieve
+
+## function folder
+only use trait
