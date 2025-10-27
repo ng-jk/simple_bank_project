@@ -14,6 +14,26 @@ $transaction_controller = new transaction_controller($mysqli);
 // API routes
 if (strpos($request_uri, '/api/') !== false) {
     header('Content-Type: application/json');
+
+    // Authentication routes
+    // OTP-based registration (new flow)
+    if ($request_uri == '/api/auth/register/request-otp' && $request_method == 'POST') {
+        $result = $auth_controller->request_registration_otp();
+        echo json_encode($result);
+        exit;
+    }
+    
+    if ($request_uri == '/api/auth/register/verify-otp' && $request_method == 'POST') {
+        $result = $auth_controller->verify_registration_otp();
+        echo json_encode($result);
+        exit;
+    }
+    
+    if ($request_uri == '/api/auth/resend-otp' && $request_method == 'POST') {
+        $result = $auth_controller->resend_otp();
+        echo json_encode($result);
+        exit;
+    }
     
     // Authentication routes
     if ($request_uri == '/api/auth/register' && $request_method == 'POST') {
@@ -116,7 +136,7 @@ if (strpos($request_uri, '/api/') !== false) {
 $page_routes = [
     '/' => 'frontend/index.html',
     '/login' => 'frontend/login.html',
-    '/register' => 'frontend/register.html',
+    '/register_otp' => 'frontend/register_otp.html',
     '/dashboard' => 'frontend/dashboard.html',
     '/accounts' => 'frontend/accounts.html',
     '/transactions' => 'frontend/transactions.html',

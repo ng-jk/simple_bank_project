@@ -32,7 +32,7 @@ function migrate_001_up($mysqli) {
         account_number VARCHAR(20) NOT NULL UNIQUE,
         account_type ENUM('checking', 'savings') DEFAULT 'checking',
         balance DECIMAL(15, 2) DEFAULT 0.00,
-        currency VARCHAR(3) DEFAULT 'USD',
+        currency VARCHAR(3) DEFAULT 'RM',
         status ENUM('active', 'closed', 'frozen') DEFAULT 'active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

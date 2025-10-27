@@ -19,7 +19,7 @@ class account_controller {
         $user_id = $status->user_info['user_id'];
         
         $account_type = $data['account_type'] ?? 'checking';
-        $currency = $data['currency'] ?? 'USD';
+        $currency = $data['currency'] ?? 'RM';
         
         return $this->account_model->create_account($user_id, $account_type, $currency);
     }

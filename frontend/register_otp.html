@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Simple Bank</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        
+        .register-container {
+            background: white;
+            padding: 3rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 450px;
+        }
+        
+        .logo {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #999;
+            position: relative;
+        }
+        
+        .step.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .step.completed {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 2px;
+            background: #e0e0e0;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .form-step {
+            display: none;
+        }
+        
+        .form-step.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .otp-inputs {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+        
+        .otp-input {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+            margin-top: 1rem;
+        }
+        
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .info {
+            background: #e8f4fd;
+            color: #0066cc;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #666;
+        }
+        
+        .link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        .link a:hover {
+            text-decoration: underline;
+        }
+        
+        .timer {
+            text-align: center;
+            color: #666;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .resend-link {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        
+        .resend-link.disabled {
+            color: #ccc;
+            cursor: not-allowed;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="logo">🏦</div>
+        <h1>Create Account</h1>
+        <p class="subtitle">Join Simple Bank today</p>
+        
+        <div class="step-indicator">
+            <div class="step active" id="step-1">1</div>
+            <div class="step" id="step-2">2</div>
+        </div>
+        
+        <!-- Step 1: Registration Form -->
+        <div class="form-step active" id="form-step-1">
+            <div id="error-step1" class="error"></div>
+            
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="user_name">Username</label>
+                    <input type="text" id="user_name" required autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="user_email">Email Address</label>
+                    <input type="email" id="user_email" required autocomplete="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required autocomplete="new-password">
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" id="confirm_password" required autocomplete="new-password">
+                </div>
+                
+                <button type="submit" class="btn" id="register-btn">Send Verification Code</button>
+            </form>
+            
+            <div class="link">
+                Already have an account? <a href="/login">Login</a>
+            </div>
+        </div>
+        
+        <!-- Step 2: OTP Verification -->
+        <div class="form-step" id="form-step-2">
+            <div id="error-step2" class="error"></div>
+            <div id="success-step2" class="success"></div>
+            
+            <div class="info">
+                📧 We've sent a 6-digit verification code to <strong id="email-display"></strong>
+            </div>
+            
+            <form id="otp-form">
+                <div class="form-group">
+                    <label>Enter Verification Code</label>
+                    <div class="otp-inputs">
+                        <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" required>
+                        <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" required>
+                        <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" required>
+                        <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" required>
+                        <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" required>
+                        <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" required>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn" id="verify-btn">Verify & Complete Registration</button>
+                
+                <div class="timer">
+                    <span id="timer-text">Code expires in <strong id="timer">10:00</strong></span>
+                    <br>
+                    Didn't receive code? <span class="resend-link disabled" id="resend-link">Resend Code</span>
+                </div>
+            </form>
+            
+            <button class="btn btn-secondary" id="back-btn">← Back to Registration</button>
+        </div>
+    </div>
+    
+    <script>
+        let registrationData = {};
+        let timerInterval;
+        let resendTimeout;
+        
+        // Step 1: Registration Form
+        document.getElementById('register-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const errorDiv = document.getElementById('error-step1');
+            const btn = document.getElementById('register-btn');
+            
+            errorDiv.style.display = 'none';
+            btn.disabled = true;
+            
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            if (password !== confirmPassword) {
+                errorDiv.textContent = 'Passwords do not match';
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+                return;
+            }
+            
+            registrationData = {
+                user_name: document.getElementById('user_name').value,
+                user_email: document.getElementById('user_email').value,
+                password: password
+            };
+            
+            try {
+                const response = await fetch('/api/auth/register/request-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(registrationData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show OTP in console for development
+                    if (result.dev_otp) {
+                        console.log('🔑 Development OTP:', result.dev_otp);
+                        alert('Development Mode: OTP is ' + result.dev_otp);
+                    }
+                    
+                    // Move to step 2
+                    document.getElementById('email-display').textContent = registrationData.user_email;
+                    goToStep(2);
+                    startTimer(600); // 10 minutes
+                    enableResend(60); // Enable resend after 60 seconds
+                } else {
+                    errorDiv.textContent = result.error;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'An error occurred. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+            
+            btn.disabled = false;
+        });
+        
+        // OTP Input handling
+        const otpInputs = document.querySelectorAll('.otp-input');
+        otpInputs.forEach((input, index) => {
+            input.addEventListener('input', function(e) {
+                if (this.value.length === 1 && index < otpInputs.length - 1) {
+                    otpInputs[index + 1].focus();
+                }
+            });
+            
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && this.value === '' && index > 0) {
+                    otpInputs[index - 1].focus();
+                }
+            });
+            
+            // Only allow numbers
+            input.addEventListener('keypress', function(e) {
+                if (!/[0-9]/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+        });
+        
+        // Step 2: OTP Verification
+        document.getElementById('otp-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const errorDiv = document.getElementById('error-step2');
+            const successDiv = document.getElementById('success-step2');
+            const btn = document.getElementById('verify-btn');
+            
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            btn.disabled = true;
+            
+            // Collect OTP
+            let otp = '';
+            otpInputs.forEach(input => {
+                otp += input.value;
+            });
+            
+            if (otp.length !== 6) {
+                errorDiv.textContent = 'Please enter all 6 digits';
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/auth/register/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: registrationData.user_email,
+                        otp_code: otp
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    successDiv.textContent = result.message || 'Registration successful!';
+                    successDiv.style.display = 'block';
+                    
+                    clearInterval(timerInterval);
+                    
+                    // Redirect to login after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else {
+                    errorDiv.textContent = result.error;
+                    errorDiv.style.display = 'block';
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                errorDiv.textContent = 'An error occurred. Please try again.';
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+            }
+        });
+        
+        // Resend OTP
+        document.getElementById('resend-link').addEventListener('click', async function() {
+            if (this.classList.contains('disabled')) return;
+            
+            const errorDiv = document.getElementById('error-step2');
+            errorDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/auth/resend-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: registrationData.user_email,
+                        purpose: 'registration',
+                        user_data: registrationData
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    if (result.dev_otp) {
+                        console.log('🔑 Development OTP:', result.dev_otp);
+                        alert('Development Mode: New OTP is ' + result.dev_otp);
+                    }
+                    
+                    // Reset timer
+                    startTimer(600);
+                    enableResend(60);
+                    
+                    // Clear OTP inputs
+                    otpInputs.forEach(input => input.value = '');
+                    otpInputs[0].focus();
+                } else {
+                    errorDiv.textContent = result.error;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Failed to resend code';
+                errorDiv.style.display = 'block';
+            }
+        });
+        
+        // Back button
+        document.getElementById('back-btn').addEventListener('click', function() {
+            clearInterval(timerInterval);
+            clearTimeout(resendTimeout);
+            goToStep(1);
+        });
+        
+        // Helper functions
+        function goToStep(step) {
+            document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('active', 'completed'));
+            
+            document.getElementById('form-step-' + step).classList.add('active');
+            document.getElementById('step-' + step).classList.add('active');
+            
+            for (let i = 1; i < step; i++) {
+                document.getElementById('step-' + i).classList.add('completed');
+            }
+        }
+        
+        function startTimer(seconds) {
+            clearInterval(timerInterval);
+            
+            const timerElement = document.getElementById('timer');
+            let remaining = seconds;
+            
+            function updateTimer() {
+                const minutes = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                timerElement.textContent = `${minutes}:${secs.toString().padStart(2, '0')}`;
+                
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('timer-text').innerHTML = '<span style="color: #c33;">Code expired</span>';
+                }
+                
+                remaining--;
+            }
+            
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+        
+        function enableResend(seconds) {
+            const resendLink = document.getElementById('resend-link');
+            resendLink.classList.add('disabled');
+            
+            clearTimeout(resendTimeout);
+            resendTimeout = setTimeout(() => {
+                resendLink.classList.remove('disabled');
+            }, seconds * 1000);
+        }
+    </script>
+</body>
+</html>
+

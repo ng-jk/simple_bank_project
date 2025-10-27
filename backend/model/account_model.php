@@ -25,7 +25,7 @@ class account_model {
         return $account_number;
     }
     
-    public function create_account($user_id, $account_type = 'checking', $currency = 'USD') {
+    public function create_account($user_id, $account_type = 'checking', $currency = 'RM') {
         $account_number = $this->generate_account_number();
         
         $stmt = $this->mysqli->prepare("INSERT INTO bank_account (user_id, account_number, account_type, currency) VALUES (?, ?, ?, ?)");

@@ -1,6 +1,7 @@
 {
     "require": {
         "web-token/jwt-framework": "^4.0",
-        "firebase/php-jwt": "^6.11"
+        "firebase/php-jwt": "^6.11",
+        "phpmailer/phpmailer": "^7.0"
     }
 }
