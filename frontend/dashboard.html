@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Simple Bank</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 2rem;
+            transition: opacity 0.3s;
+        }
+        
+        nav a:hover {
+            opacity: 0.8;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        .welcome {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .welcome h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .welcome p {
+            color: #666;
+        }
+        
+        .accounts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .account-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+        
+        .account-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .account-type {
+            color: #667eea;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+        
+        .account-number {
+            color: #999;
+            font-size: 0.9rem;
+            margin: 0.5rem 0;
+        }
+        
+        .balance {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            margin: 1rem 0;
+        }
+        
+        .account-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background: #e7f7ef;
+            color: #27ae60;
+        }
+        
+        .quick-actions {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .quick-actions h2 {
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .action-btn {
+            display: block;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">🏦 Simple Bank</div>
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/accounts">Accounts</a>
+            <a href="/transactions">Transactions</a>
+            <a href="/transfer">Transfer</a>
+            <a href="#" id="logout-btn">Logout</a>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <div class="welcome">
+            <h1>Welcome back, <span id="user-name">User</span>!</h1>
+            <p>Here's an overview of your accounts</p>
+        </div>
+        
+        <div id="accounts-container" class="accounts-grid">
+            <div class="loading">Loading your accounts...</div>
+        </div>
+        
+        <div class="quick-actions">
+            <h2>Quick Actions</h2>
+            <div class="actions-grid">
+                <a href="/transfer" class="action-btn">💸 Transfer Money</a>
+                <a href="/accounts" class="action-btn">💳 View All Accounts</a>
+                <a href="/transactions" class="action-btn">📊 Transaction History</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        window.addEventListener('load', function() {
+            // Check if user is logged in
+            if (!window.serverData || window.serverData.metadata.login_status !== 'login') {
+                window.location.href = '/login';
+                return;
+            }
+            
+            // Display user name
+            if (window.serverData.user && window.serverData.user.user_name) {
+                document.getElementById('user-name').textContent = window.serverData.user.user_name;
+            }
+            
+            // Load accounts
+            fetch('/api/accounts')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('accounts-container');
+                    
+                    if (data.success && data.accounts.length > 0) {
+                        container.innerHTML = '';
+                        
+                        data.accounts.forEach(account => {
+                            const card = document.createElement('div');
+                            card.className = 'account-card';
+                            card.innerHTML = `
+                                <div class="account-type">${account.account_type}</div>
+                                <div class="account-number">Account: ${account.account_number}</div>
+                                <div class="balance">${account.currency} ${parseFloat(account.balance).toFixed(2)}</div>
+                                <span class="account-status status-${account.status}">${account.status}</span>
+                            `;
+                            container.appendChild(card);
+                        });
+                    } else {
+                        container.innerHTML = '<div class="loading">No accounts found. <a href="/accounts">Create one</a></div>';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('accounts-container').innerHTML = '<div class="loading">Error loading accounts</div>';
+                });
+            
+            // Logout handler
+            document.getElementById('logout-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                fetch('/api/auth/logout', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.href = '/';
+                        }
+                    });
+            });
+        });
+    </script>
+</body>
+</html>
+

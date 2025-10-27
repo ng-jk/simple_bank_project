@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Accounts - Simple Bank</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 2rem;
+            transition: opacity 0.3s;
+        }
+        
+        nav a:hover {
+            opacity: 0.8;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        .page-header {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .page-header h1 {
+            color: #333;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .accounts-list {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .account-item {
+            padding: 2rem;
+            border-bottom: 1px solid #eee;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 2rem;
+            align-items: center;
+        }
+        
+        .account-item:last-child {
+            border-bottom: none;
+        }
+        
+        .account-info h3 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        
+        .account-info p {
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
+        .account-balance {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .account-status span {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background: #e7f7ef;
+            color: #27ae60;
+        }
+        
+        .account-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .btn-small:hover {
+            background: #5568d3;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .modal-content h2 {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .btn-secondary {
+            background: #ccc;
+            color: #333;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">🏦 Simple Bank</div>
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/accounts">Accounts</a>
+            <a href="/transactions">Transactions</a>
+            <a href="/transfer">Transfer</a>
+            <a href="#" id="logout-btn">Logout</a>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1>My Accounts</h1>
+            <button class="btn" id="create-account-btn">+ Create New Account</button>
+        </div>
+        
+        <div id="accounts-list" class="accounts-list">
+            <div class="loading">Loading accounts...</div>
+        </div>
+    </div>
+    
+    <div id="create-modal" class="modal">
+        <div class="modal-content">
+            <h2>Create New Account</h2>
+            <form id="create-account-form">
+                <div class="form-group">
+                    <label for="account-type">Account Type</label>
+                    <select id="account-type" name="account_type" required>
+                        <option value="checking">Checking</option>
+                        <option value="savings">Savings</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="currency">Currency</label>
+                    <select id="currency" name="currency" required>
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                        <option value="JPY">JPY - Japanese Yen</option>
+                    </select>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="submit" class="btn">Create Account</button>
+                    <button type="button" class="btn btn-secondary" id="cancel-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        window.addEventListener('load', function() {
+            // Check if user is logged in
+            if (!window.serverData || window.serverData.metadata.login_status !== 'login') {
+                window.location.href = '/login';
+                return;
+            }
+            
+            const modal = document.getElementById('create-modal');
+            const createBtn = document.getElementById('create-account-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const form = document.getElementById('create-account-form');
+            
+            // Load accounts
+            function loadAccounts() {
+                fetch('/api/accounts')
+                    .then(response => response.json())
+                    .then(data => {
+                        const container = document.getElementById('accounts-list');
+                        
+                        if (data.success && data.accounts.length > 0) {
+                            container.innerHTML = '';
+                            
+                            data.accounts.forEach(account => {
+                                const item = document.createElement('div');
+                                item.className = 'account-item';
+                                item.innerHTML = `
+                                    <div class="account-info">
+                                        <h3>${account.account_type.toUpperCase()}</h3>
+                                        <p>Account: ${account.account_number}</p>
+                                    </div>
+                                    <div class="account-balance">${account.currency} ${parseFloat(account.balance).toFixed(2)}</div>
+                                    <div class="account-status">
+                                        <span class="status-${account.status}">${account.status}</span>
+                                    </div>
+                                    <div class="account-actions">
+                                        <a href="/transactions?account=${account.account_id}" class="btn-small">View Transactions</a>
+                                    </div>
+                                `;
+                                container.appendChild(item);
+                            });
+                        } else {
+                            container.innerHTML = '<div class="loading">No accounts found. Create your first account!</div>';
+                        }
+                    })
+                    .catch(error => {
+                        document.getElementById('accounts-list').innerHTML = '<div class="loading">Error loading accounts</div>';
+                    });
+            }
+            
+            loadAccounts();
+            
+            // Modal handlers
+            createBtn.addEventListener('click', () => {
+                modal.style.display = 'flex';
+            });
+            
+            cancelBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+            
+            // Create account
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const accountType = document.getElementById('account-type').value;
+                const currency = document.getElementById('currency').value;
+                
+                fetch('/api/accounts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        account_type: accountType,
+                        currency: currency
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        modal.style.display = 'none';
+                        form.reset();
+                        loadAccounts();
+                        alert('Account created successfully! Account number: ' + data.account_number);
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('An error occurred. Please try again.');
+                });
+            });
+            
+            // Logout handler
+            document.getElementById('logout-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                fetch('/api/auth/logout', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.href = '/';
+                        }
+                    });
+            });
+        });
+    </script>
+</body>
+</html>
+

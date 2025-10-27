@@ -4,10 +4,17 @@ Options -Indexes
 # Turn on Rewrite Engine
 RewriteEngine On
 
-# Redirect /index.php to /
+# If already at index.php (from rewrite), don't redirect
+RewriteCond %{ENV:REDIRECT_STATUS} ^$
+
+# Redirect /index.php to / (only direct access)
 RewriteRule ^index\.php$ / [R=301,L]
 
-# Force all requests to go through index.php
+# Don't rewrite real directories
 RewriteCond %{REQUEST_FILENAME} !-d
+
+# Don't rewrite real files
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^(.*)$ index.php [L,QSA]
+
+# Route everything else through index.php
+RewriteRule ^(.*)$ index.php?_route=$1 [L,QSA]

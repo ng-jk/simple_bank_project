@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Money - Simple Bank</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 2rem;
+            transition: opacity 0.3s;
+        }
+        
+        nav a:hover {
+            opacity: 0.8;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        .transfer-container {
+            background: white;
+            padding: 3rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .tab {
+            padding: 1rem 2rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .account-info {
+            background: #f9f9f9;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        
+        .account-info p {
+            margin: 0.5rem 0;
+            color: #666;
+        }
+        
+        .account-info strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">🏦 Simple Bank</div>
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/accounts">Accounts</a>
+            <a href="/transactions">Transactions</a>
+            <a href="/transfer">Transfer</a>
+            <a href="#" id="logout-btn">Logout</a>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <div class="transfer-container">
+            <h1>Transfer Money</h1>
+            <p class="subtitle">Send money between accounts or make deposits and withdrawals</p>
+            
+            <div class="tabs">
+                <button class="tab active" data-tab="transfer">Transfer</button>
+                <button class="tab" data-tab="deposit">Deposit</button>
+                <button class="tab" data-tab="withdraw">Withdraw</button>
+            </div>
+            
+            <!-- Transfer Tab -->
+            <div id="transfer-tab" class="tab-content active">
+                <div id="transfer-error" class="error"></div>
+                <div id="transfer-success" class="success"></div>
+                
+                <form id="transfer-form">
+                    <div class="form-group">
+                        <label for="from-account">From Account</label>
+                        <select id="from-account" required>
+                            <option value="">Select account...</option>
+                        </select>
+                    </div>
+                    
+                    <div id="from-account-info" class="account-info" style="display: none;">
+                        <p><strong>Balance:</strong> <span id="from-balance">0.00</span></p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="to-account-number">To Account Number</label>
+                        <input type="text" id="to-account-number" placeholder="Enter recipient account number" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="transfer-amount">Amount</label>
+                        <input type="number" id="transfer-amount" step="0.01" min="0.01" placeholder="0.00" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="transfer-description">Description (Optional)</label>
+                        <textarea id="transfer-description" rows="3" placeholder="Enter transfer description"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn" id="transfer-btn">Transfer Money</button>
+                </form>
+            </div>
+            
+            <!-- Deposit Tab -->
+            <div id="deposit-tab" class="tab-content">
+                <div id="deposit-error" class="error"></div>
+                <div id="deposit-success" class="success"></div>
+                
+                <form id="deposit-form">
+                    <div class="form-group">
+                        <label for="deposit-account">Account</label>
+                        <select id="deposit-account" required>
+                            <option value="">Select account...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="deposit-amount">Amount</label>
+                        <input type="number" id="deposit-amount" step="0.01" min="0.01" placeholder="0.00" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="deposit-description">Description (Optional)</label>
+                        <textarea id="deposit-description" rows="3" placeholder="Enter deposit description"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn" id="deposit-btn">Deposit Money</button>
+                </form>
+            </div>
+            
+            <!-- Withdraw Tab -->
+            <div id="withdraw-tab" class="tab-content">
+                <div id="withdraw-error" class="error"></div>
+                <div id="withdraw-success" class="success"></div>
+                
+                <form id="withdraw-form">
+                    <div class="form-group">
+                        <label for="withdraw-account">Account</label>
+                        <select id="withdraw-account" required>
+                            <option value="">Select account...</option>
+                        </select>
+                    </div>
+                    
+                    <div id="withdraw-account-info" class="account-info" style="display: none;">
+                        <p><strong>Balance:</strong> <span id="withdraw-balance">0.00</span></p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="withdraw-amount">Amount</label>
+                        <input type="number" id="withdraw-amount" step="0.01" min="0.01" placeholder="0.00" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="withdraw-description">Description (Optional)</label>
+                        <textarea id="withdraw-description" rows="3" placeholder="Enter withdrawal description"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn" id="withdraw-btn">Withdraw Money</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let accounts = [];
+        
+        window.addEventListener('load', function() {
+            // Check if user is logged in
+            if (!window.serverData || window.serverData.metadata.login_status !== 'login') {
+                window.location.href = '/login';
+                return;
+            }
+            
+            // Load accounts
+            fetch('/api/accounts')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        accounts = data.accounts;
+                        populateAccountSelects();
+                    }
+                });
+            
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                    document.getElementById(tabName + '-tab').classList.add('active');
+                });
+            });
+            
+            // Transfer form
+            document.getElementById('transfer-form').addEventListener('submit', handleTransfer);
+            document.getElementById('deposit-form').addEventListener('submit', handleDeposit);
+            document.getElementById('withdraw-form').addEventListener('submit', handleWithdraw);
+            
+            // Account balance display
+            document.getElementById('from-account').addEventListener('change', function() {
+                const account = accounts.find(a => a.account_id == this.value);
+                if (account) {
+                    document.getElementById('from-account-info').style.display = 'block';
+                    document.getElementById('from-balance').textContent = `${account.currency} ${parseFloat(account.balance).toFixed(2)}`;
+                }
+            });
+            
+            document.getElementById('withdraw-account').addEventListener('change', function() {
+                const account = accounts.find(a => a.account_id == this.value);
+                if (account) {
+                    document.getElementById('withdraw-account-info').style.display = 'block';
+                    document.getElementById('withdraw-balance').textContent = `${account.currency} ${parseFloat(account.balance).toFixed(2)}`;
+                }
+            });
+            
+            // Logout
+            document.getElementById('logout-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                fetch('/api/auth/logout', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.href = '/';
+                        }
+                    });
+            });
+        });
+        
+        function populateAccountSelects() {
+            const selects = ['from-account', 'deposit-account', 'withdraw-account'];
+            
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                select.innerHTML = '<option value="">Select account...</option>';
+                
+                accounts.forEach(account => {
+                    const option = document.createElement('option');
+                    option.value = account.account_id;
+                    option.textContent = `${account.account_type.toUpperCase()} - ${account.account_number} (${account.currency} ${parseFloat(account.balance).toFixed(2)})`;
+                    select.appendChild(option);
+                });
+            });
+        }
+        
+        function handleTransfer(e) {
+            e.preventDefault();
+            
+            const errorDiv = document.getElementById('transfer-error');
+            const successDiv = document.getElementById('transfer-success');
+            const btn = document.getElementById('transfer-btn');
+            
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            btn.disabled = true;
+            
+            const data = {
+                from_account_id: parseInt(document.getElementById('from-account').value),
+                to_account_number: document.getElementById('to-account-number').value,
+                amount: parseFloat(document.getElementById('transfer-amount').value),
+                description: document.getElementById('transfer-description').value
+            };
+            
+            fetch('/api/transactions/transfer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    successDiv.textContent = `Transfer successful! Reference: ${result.reference}. New balance: ${result.new_balance}`;
+                    successDiv.style.display = 'block';
+                    document.getElementById('transfer-form').reset();
+                    setTimeout(() => window.location.href = '/dashboard', 2000);
+                } else {
+                    errorDiv.textContent = result.error;
+                    errorDiv.style.display = 'block';
+                }
+                btn.disabled = false;
+            })
+            .catch(error => {
+                errorDiv.textContent = 'An error occurred';
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+            });
+        }
+        
+        function handleDeposit(e) {
+            e.preventDefault();
+            
+            const errorDiv = document.getElementById('deposit-error');
+            const successDiv = document.getElementById('deposit-success');
+            const btn = document.getElementById('deposit-btn');
+            
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            btn.disabled = true;
+            
+            const data = {
+                account_id: parseInt(document.getElementById('deposit-account').value),
+                amount: parseFloat(document.getElementById('deposit-amount').value),
+                description: document.getElementById('deposit-description').value
+            };
+            
+            fetch('/api/transactions/deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    successDiv.textContent = `Deposit successful! Reference: ${result.reference}. New balance: ${result.new_balance}`;
+                    successDiv.style.display = 'block';
+                    document.getElementById('deposit-form').reset();
+                    setTimeout(() => window.location.href = '/dashboard', 2000);
+                } else {
+                    errorDiv.textContent = result.error;
+                    errorDiv.style.display = 'block';
+                }
+                btn.disabled = false;
+            })
+            .catch(error => {
+                errorDiv.textContent = 'An error occurred';
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+            });
+        }
+        
+        function handleWithdraw(e) {
+            e.preventDefault();
+            
+            const errorDiv = document.getElementById('withdraw-error');
+            const successDiv = document.getElementById('withdraw-success');
+            const btn = document.getElementById('withdraw-btn');
+            
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            btn.disabled = true;
+            
+            const data = {
+                account_id: parseInt(document.getElementById('withdraw-account').value),
+                amount: parseFloat(document.getElementById('withdraw-amount').value),
+                description: document.getElementById('withdraw-description').value
+            };
+            
+            fetch('/api/transactions/withdraw', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    successDiv.textContent = `Withdrawal successful! Reference: ${result.reference}. New balance: ${result.new_balance}`;
+                    successDiv.style.display = 'block';
+                    document.getElementById('withdraw-form').reset();
+                    setTimeout(() => window.location.href = '/dashboard', 2000);
+                } else {
+                    errorDiv.textContent = result.error;
+                    errorDiv.style.display = 'block';
+                }
+                btn.disabled = false;
+            })
+            .catch(error => {
+                errorDiv.textContent = 'An error occurred';
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>
+

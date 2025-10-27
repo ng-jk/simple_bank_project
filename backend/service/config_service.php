@@ -1,7 +1,7 @@
 <?php
 require_once "config.php";
-require_once "config_interface_service";
-abstract class config_interface_service{
+require_once "config_interface_service.php";
+abstract class config_service implements config_interface_service{
     public function update_config_key(mysqli $mysqli, $column, $value = null){
 
         if($value == null){

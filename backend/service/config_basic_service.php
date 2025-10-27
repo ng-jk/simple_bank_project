@@ -1,9 +1,10 @@
 <?php
 require_once "config.php";
-require_once "config_interface_service";
+require_once "config_interface_service.php";
+require_once "config_service.php";
 require_once "middleware_interface_service.php";
- class config_basic_service extends config_interface_service implements middleware_interface_service{
-    public function update_config_key($mysqli, $column, $value){}
+class config_basic_service extends config_service implements middleware_interface_service{
+    public function update_config_key(mysqli $mysqli, $column, $value = null){}
     public function is_allow(){
 
     }

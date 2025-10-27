@@ -3,7 +3,7 @@
 class database_mysql_service extends database_service implements middleware_interface_service{
 
     public function __construct(database $database){
-        $this->$database = $database;
+        $this->database = $database;
     }
 
     // overwirte function in database_service to use another database
