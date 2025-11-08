@@ -6,12 +6,14 @@ require_once __DIR__ . '/controller/auth_controller.php';
 require_once __DIR__ . '/controller/account_controller.php';
 require_once __DIR__ . '/controller/transaction_controller.php';
 require_once __DIR__ . '/controller/statement_controller.php';
+require_once __DIR__ . '/controller/admin_controller.php';
 
 // Initialize controllers
 $auth_controller = new auth_controller($mysqli, $config->JWT_DAILY_REFRESH_KEY);
 $account_controller = new account_controller($mysqli);
 $transaction_controller = new transaction_controller($mysqli);
 $statement_controller = new statement_controller($mysqli);
+$admin_controller = new admin_controller($mysqli, $config->JWT_DAILY_REFRESH_KEY);
 
 // API routes
 if (strpos($request_uri, '/api/') !== false) {
@@ -64,7 +66,26 @@ if (strpos($request_uri, '/api/') !== false) {
         echo json_encode($result);
         exit;
     }
-    
+
+    // Admin authentication routes
+    if ($request_uri == '/api/admin/auth/login' && $request_method == 'POST') {
+        $result = $admin_controller->login();
+        echo json_encode($result);
+        exit;
+    }
+
+    if ($request_uri == '/api/admin/auth/logout' && $request_method == 'POST') {
+        $result = $admin_controller->logout();
+        echo json_encode($result);
+        exit;
+    }
+
+    if ($request_uri == '/api/admin/auth/me' && $request_method == 'GET') {
+        $result = $admin_controller->get_current_user($status);
+        echo json_encode($result);
+        exit;
+    }
+
     // Account routes
     if ($request_uri == '/api/accounts' && $request_method == 'GET') {
         $result = $account_controller->get_my_accounts($status);
@@ -164,6 +185,12 @@ if (strpos($request_uri, '/api/') !== false) {
     exit;
 }
 
+// Admin redirect - /admin redirects to /admin/login
+if ($request_uri == '/admin') {
+    header('Location: /admin/login');
+    exit;
+}
+
 // Frontend page routes
 $page_routes = [
     '/' => 'frontend/index.html',
@@ -172,16 +199,43 @@ $page_routes = [
     '/dashboard' => 'frontend/dashboard.html',
     '/accounts' => 'frontend/accounts.html',
     '/transactions' => 'frontend/transactions.html',
-    '/transfer' => 'frontend/transfer.html'
+    '/transfer' => 'frontend/transfer.html',
+    '/admin/login' => 'frontend/admin/login.html',
+    '/admin/dashboard' => 'frontend/admin/dashboard.html'
 ];
+
+// Define admin-only and user-only routes
+$admin_routes = ['/admin/dashboard'];
+$user_routes = ['/dashboard', '/accounts', '/transactions', '/transfer'];
 
 // Serve frontend pages with server data injection
 foreach ($page_routes as $route => $file) {
     if ($request_uri == $route) {
 
         $file_path = __DIR__ . '/../' . $file;
-        
+
         if (file_exists($file_path)) {
+            // Role-based access control
+            $is_admin_route = in_array($route, $admin_routes);
+            $is_user_route = in_array($route, $user_routes);
+
+            // Check if user is logged in and has correct role
+            if ($status->is_login) {
+                $user_role = $status->permission;
+
+                // Admin trying to access user-only pages - redirect to admin dashboard
+                if ($user_role === 'admin' && $is_user_route) {
+                    header('Location: /admin/dashboard');
+                    exit;
+                }
+
+                // Regular user trying to access admin pages - redirect to user dashboard
+                if ($user_role === 'user' && $is_admin_route) {
+                    header('Location: /dashboard');
+                    exit;
+                }
+            }
+
             // Prepare server data for frontend
             $server_data = [
                 'metadata' => [
@@ -191,17 +245,17 @@ foreach ($page_routes as $route => $file) {
                     'current_uri' => $request_uri
                 ]
             ];
-            
+
             // Add user data if logged in
             if ($status->is_login) {
                 $server_data['user'] = $status->user_info;
             }
-            
+
             // Inject server data before HTML
             echo '<script>';
             echo 'window.serverData = ' . json_encode($server_data) . ';';
             echo '</script>';
-            
+
             // Include the HTML file
             include $file_path;
             exit;
