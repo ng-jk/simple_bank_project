@@ -36,6 +36,11 @@ class admin_controller {
                 return ['success' => false, 'error' => 'Access denied. Admin privileges required.'];
             }
 
+            // Check if admin account is active
+            if ($user['user_status'] !== 'active') {
+                return ['success' => false, 'error' => 'Your admin account has been suspended. Please contact system administrator.'];
+            }
+
             // Generate JWT token
             $status = new status(
                 $user['user_role'],
@@ -108,6 +113,46 @@ class admin_controller {
         }
 
         return ['success' => true];
+    }
+
+    /**
+     * Get dashboard statistics
+     */
+    public function get_statistics($status) {
+        if (!$status->is_login || $status->permission !== 'admin') {
+            return ['success' => false, 'error' => 'Access denied. Admin privileges required.'];
+        }
+
+        try {
+            // Get total users count
+            $stmt = $this->mysqli->prepare("SELECT COUNT(*) as total FROM system_user");
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $total_users = $result->fetch_assoc()['total'];
+
+            // Get total accounts count
+            $stmt = $this->mysqli->prepare("SELECT COUNT(*) as total FROM bank_account");
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $total_accounts = $result->fetch_assoc()['total'];
+
+            // Get total transactions count
+            $stmt = $this->mysqli->prepare("SELECT COUNT(*) as total FROM bank_transaction");
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $total_transactions = $result->fetch_assoc()['total'];
+
+            return [
+                'success' => true,
+                'statistics' => [
+                    'total_users' => $total_users,
+                    'total_accounts' => $total_accounts,
+                    'total_transactions' => $total_transactions
+                ]
+            ];
+        } catch (Exception $e) {
+            return ['success' => false, 'error' => 'Failed to fetch statistics: ' . $e->getMessage()];
+        }
     }
 }
 ?>

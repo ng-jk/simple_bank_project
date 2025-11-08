@@ -222,17 +222,22 @@ class auth_controller {
     
     public function login() {
         $data = json_decode(file_get_contents('php://input'), true);
-        
+
         if (!isset($data['user_name']) || !isset($data['password'])) {
             return ['success' => false, 'error' => 'Missing credentials'];
         }
-        
+
         $result = $this->user_model->verify_password($data['user_name'], $data['password']);
-        
+
         if ($result['success']) {
-            // Generate JWT token
             $user = $result['user'];
-            
+
+            // Check if user account is active
+            if ($user['user_status'] !== 'active') {
+                return ['success' => false, 'error' => 'Your account has been suspended. Please contact support.'];
+            }
+
+            // Generate JWT token
             $status = new status(
                 $user['user_role'],
                 true,
@@ -241,20 +246,20 @@ class auth_controller {
                 $_SERVER['HTTP_HOST'],
                 $user
             );
-            
+
             $config = new config($this->secret_key);
             $jwt_data = new jwt($status, $config, '');
             $jwt_service = new jwt_generate_service($jwt_data, $this->secret_key);
-            
+
             $token = $jwt_service->generate_token([
                 'user_id' => $user['user_id'],
                 'user_name' => $user['user_name'],
                 'role' => $user['user_role']
             ]);
-            
+
             // Set cookie
             setcookie('jwt_token', $token, time() + 3600, '/', '', false, true);
-            
+
             return [
                 'success' => true,
                 'token' => $token,

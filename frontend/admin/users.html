@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .admin-badge {
+            background: #e74c3c;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d68910;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .btn-small {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #3498db;
+            text-decoration: none;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h2 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: #7f8c8d;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #7f8c8d;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            color: #2c3e50;
+        }
+
+        .tab.active {
+            color: #3498db;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #3498db;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+        }
+
+        thead th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #ecf0f1;
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        tbody td {
+            padding: 1rem;
+            color: #555;
+        }
+
+        .status-badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-suspended {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .role-badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .role-admin {
+            background: #e8daef;
+            color: #5b2c6f;
+        }
+
+        .role-user {
+            background: #d6eaf8;
+            color: #1b4f72;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h3 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+        }
+
+        .modal-body {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-title">
+            <h1>User Management</h1>
+            <span class="admin-badge">ADMIN</span>
+        </div>
+        <div class="user-info">
+            <span id="adminName">Admin User</span>
+            <button class="btn btn-warning btn-small" onclick="showChangeOwnPasswordModal()">Change Password</button>
+            <button class="btn btn-danger btn-small" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <a href="/admin/dashboard" class="back-link">
+            &larr; Back to Dashboard
+        </a>
+
+        <div class="page-header">
+            <h2>User Management</h2>
+            <p>Manage staff members and customer accounts</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('staff')">
+                Staff Management
+            </button>
+            <button class="tab" onclick="switchTab('customers')">
+                Customer Management
+            </button>
+        </div>
+
+        <!-- Staff Tab -->
+        <div id="staffTab" class="tab-content active">
+            <div class="actions-bar">
+                <div class="search-box">
+                    <input type="text" id="staffSearch" placeholder="Search by name or email..." onkeyup="filterStaff()">
+                </div>
+                <button class="btn btn-primary" onclick="showCreateStaffModal()">
+                    + Add Staff Member
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="staffTableBody">
+                        <tr>
+                            <td colspan="6" class="loading">Loading staff members...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Customers Tab -->
+        <div id="customersTab" class="tab-content">
+            <div class="actions-bar">
+                <div class="search-box">
+                    <input type="text" id="customerSearch" placeholder="Search by name or email..." onkeyup="filterCustomers()">
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customerTableBody">
+                        <tr>
+                            <td colspan="6" class="loading">Loading customers...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Staff Modal -->
+    <div id="createStaffModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Staff Member</h3>
+            </div>
+            <div class="modal-body">
+                <form id="createStaffForm">
+                    <div class="form-group">
+                        <label for="staffUsername">Username</label>
+                        <input type="text" id="staffUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="staffEmail">Email</label>
+                        <input type="email" id="staffEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="staffPassword">Password (min. 8 characters)</label>
+                        <input type="password" id="staffPassword" required minlength="8">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCreateStaffModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createStaff()">Create Staff</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Staff Modal -->
+    <div id="editStaffModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Staff Member</h3>
+            </div>
+            <div class="modal-body">
+                <form id="editStaffForm">
+                    <input type="hidden" id="editStaffId">
+                    <div class="form-group">
+                        <label for="editStaffUsername">Username</label>
+                        <input type="text" id="editStaffUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStaffEmail">Email</label>
+                        <input type="email" id="editStaffEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStaffStatus">Status</label>
+                        <select id="editStaffStatus">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="suspended">Suspended</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditStaffModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="updateStaff()">Update Staff</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Staff Password Modal -->
+    <div id="resetStaffPasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Reset Staff Password</h3>
+            </div>
+            <div class="modal-body">
+                <form id="resetStaffPasswordForm">
+                    <input type="hidden" id="resetStaffPasswordUserId">
+                    <p style="margin-bottom: 1rem; color: #555;">
+                        Resetting password for: <strong id="resetStaffPasswordUsername"></strong>
+                    </p>
+                    <div class="form-group">
+                        <label for="newStaffPassword">New Password (min. 8 characters)</label>
+                        <input type="password" id="newStaffPassword" required minlength="8">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmStaffPassword">Confirm Password</label>
+                        <input type="password" id="confirmStaffPassword" required minlength="8">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeResetStaffPasswordModal()">Cancel</button>
+                <button class="btn btn-warning" onclick="resetStaffPassword()">Reset Password</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Customer Password Modal -->
+    <div id="resetPasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Reset Customer Password</h3>
+            </div>
+            <div class="modal-body">
+                <form id="resetPasswordForm">
+                    <input type="hidden" id="resetPasswordUserId">
+                    <p style="margin-bottom: 1rem; color: #555;">
+                        Resetting password for: <strong id="resetPasswordUsername"></strong>
+                    </p>
+                    <div class="form-group">
+                        <label for="newPassword">New Password (min. 8 characters)</label>
+                        <input type="password" id="newPassword" required minlength="8">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" required minlength="8">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeResetPasswordModal()">Cancel</button>
+                <button class="btn btn-warning" onclick="resetPassword()">Reset Password</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Own Password Modal -->
+    <div id="changeOwnPasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Change Your Password</h3>
+            </div>
+            <div class="modal-body">
+                <form id="changeOwnPasswordForm">
+                    <div class="form-group">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" required minlength="8">
+                    </div>
+                    <div class="form-group">
+                        <label for="newOwnPassword">New Password (min. 8 characters)</label>
+                        <input type="password" id="newOwnPassword" required minlength="8">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmOwnPassword">Confirm New Password</label>
+                        <input type="password" id="confirmOwnPassword" required minlength="8">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeChangeOwnPasswordModal()">Cancel</button>
+                <button class="btn btn-success" onclick="changeOwnPassword()">Update Password</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let staffUsers = [];
+        let customerUsers = [];
+        let currentTab = 'staff';
+
+        // Check authentication
+        if (!window.serverData || window.serverData.metadata.permission !== 'admin') {
+            window.location.href = '/admin/login';
+        }
+
+        // Set admin name in header
+        if (window.serverData && window.serverData.user) {
+            document.getElementById('adminName').textContent = window.serverData.user.user_name;
+        }
+
+        // Load users on page load
+        loadUsers();
+
+        function switchTab(tab) {
+            currentTab = tab;
+
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if (tab === 'staff') {
+                document.getElementById('staffTab').classList.add('active');
+            } else {
+                document.getElementById('customersTab').classList.add('active');
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/admin/users');
+                const data = await response.json();
+
+                if (data.success) {
+                    staffUsers = data.data.filter(user => user.user_role === 'admin');
+                    customerUsers = data.data.filter(user => user.user_role === 'user');
+
+                    renderStaffTable();
+                    renderCustomerTable();
+                } else {
+                    showAlert('Failed to load users: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showAlert('Error loading users: ' + error.message, 'error');
+            }
+        }
+
+        function renderStaffTable() {
+            const tbody = document.getElementById('staffTableBody');
+
+            // Get current user ID to exclude from list
+            const currentUserId = window.serverData?.user?.user_id;
+
+            // Filter out the current user
+            const displayStaff = staffUsers.filter(user => user.user_id !== currentUserId);
+
+            if (displayStaff.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No other staff members found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = displayStaff.map(user => `
+                <tr data-user-id="${user.user_id}">
+                    <td>${user.user_id}</td>
+                    <td>${user.user_name}</td>
+                    <td>${user.user_email}</td>
+                    <td><span class="status-badge status-${user.user_status}">${user.user_status}</span></td>
+                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-warning btn-small" onclick="showResetStaffPasswordModal(${user.user_id}, '${user.user_name}')">Reset Password</button>
+                            <button class="btn btn-primary btn-small" onclick="showEditStaffModal(${user.user_id})">Edit</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteStaff(${user.user_id}, '${user.user_name}')">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderCustomerTable() {
+            const tbody = document.getElementById('customerTableBody');
+
+            if (customerUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No customers found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = customerUsers.map(user => `
+                <tr data-user-id="${user.user_id}">
+                    <td>${user.user_id}</td>
+                    <td>${user.user_name}</td>
+                    <td>${user.user_email}</td>
+                    <td><span class="status-badge status-${user.user_status}">${user.user_status}</span></td>
+                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-warning btn-small" onclick="showResetPasswordModal(${user.user_id}, '${user.user_name}')">Reset Password</button>
+                            ${user.user_status === 'active'
+                                ? `<button class="btn btn-danger btn-small" onclick="toggleCustomerStatus(${user.user_id}, 'suspended')">Block</button>`
+                                : `<button class="btn btn-success btn-small" onclick="toggleCustomerStatus(${user.user_id}, 'active')">Unblock</button>`
+                            }
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterStaff() {
+            const searchTerm = document.getElementById('staffSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#staffTableBody tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        function filterCustomers() {
+            const searchTerm = document.getElementById('customerSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#customerTableBody tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        // Staff Modal Functions
+        function showCreateStaffModal() {
+            document.getElementById('createStaffModal').classList.add('active');
+        }
+
+        function closeCreateStaffModal() {
+            document.getElementById('createStaffModal').classList.remove('active');
+            document.getElementById('createStaffForm').reset();
+        }
+
+        async function createStaff() {
+            const username = document.getElementById('staffUsername').value;
+            const email = document.getElementById('staffEmail').value;
+            const password = document.getElementById('staffPassword').value;
+
+            if (!username || !email || !password) {
+                showAlert('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/users/staff', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_name: username,
+                        user_email: email,
+                        user_password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('Staff member created successfully!', 'success');
+                    closeCreateStaffModal();
+                    loadUsers();
+                } else {
+                    showAlert('Failed to create staff: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showAlert('Error creating staff: ' + error.message, 'error');
+            }
+        }
+
+        function showEditStaffModal(userId) {
+            const user = staffUsers.find(u => u.user_id === userId);
+            if (!user) return;
+
+            document.getElementById('editStaffId').value = user.user_id;
+            document.getElementById('editStaffUsername').value = user.user_name;
+            document.getElementById('editStaffEmail').value = user.user_email;
+            document.getElementById('editStaffStatus').value = user.user_status;
+
+            document.getElementById('editStaffModal').classList.add('active');
+        }
+
+        function closeEditStaffModal() {
+            document.getElementById('editStaffModal').classList.remove('active');
+            document.getElementById('editStaffForm').reset();
+        }
+
+        async function updateStaff() {
+            const userId = document.getElementById('editStaffId').value;
+            const username = document.getElementById('editStaffUsername').value;
+            const email = document.getElementById('editStaffEmail').value;
+            const status = document.getElementById('editStaffStatus').value;
+
+            try {
+                const response = await fetch('/api/admin/users/staff', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: parseInt(userId),
+                        user_name: username,
+                        user_email: email,
+                        user_status: status
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('Staff member updated successfully!', 'success');
+                    closeEditStaffModal();
+                    loadUsers();
+                } else {
+                    showAlert('Failed to update staff: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showAlert('Error updating staff: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteStaff(userId, username) {
+            if (!confirm(`Are you sure you want to delete staff member "${username}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/users/staff', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('Staff member deleted successfully!', 'success');
+                    loadUsers();
+                } else {
+                    showAlert('Failed to delete staff: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showAlert('Error deleting staff: ' + error.message, 'error');
+            }
+        }
+
+        // Staff Password Reset Functions
+        function showResetStaffPasswordModal(userId, username) {
+            document.getElementById('resetStaffPasswordUserId').value = userId;
+            document.getElementById('resetStaffPasswordUsername').textContent = username;
+            document.getElementById('resetStaffPasswordModal').classList.add('active');
+        }
+
+        function closeResetStaffPasswordModal() {
+            document.getElementById('resetStaffPasswordModal').classList.remove('active');
+            document.getElementById('resetStaffPasswordForm').reset();
+        }
+
+        async function resetStaffPassword() {
+            const userId = document.getElementById('resetStaffPasswordUserId').value;
+            const newPassword = document.getElementById('newStaffPassword').value;
+            const confirmPassword = document.getElementById('confirmStaffPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                showAlert('Passwords do not match', 'error');
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                showAlert('Password must be at least 8 characters long', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/users/staff/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: parseInt(userId),
+                        new_password: newPassword
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('Staff password reset successfully!', 'success');
+                    closeResetStaffPasswordModal();
+                } else {
+                    showAlert('Failed to reset password: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showAlert('Error resetting password: ' + error.message, 'error');
+            }
+        }
+
+        // Customer Functions
+        function showResetPasswordModal(userId, username) {
+            document.getElementById('resetPasswordUserId').value = userId;
+            document.getElementById('resetPasswordUsername').textContent = username;
+            document.getElementById('resetPasswordModal').classList.add('active');
+        }
+
+        function closeResetPasswordModal() {
+            document.getElementById('resetPasswordModal').classList.remove('active');
+            document.getElementById('resetPasswordForm').reset();
+        }
+
+        async function resetPassword() {
+            const userId = document.getElementById('resetPasswordUserId').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                showAlert('Passwords do not match', 'error');
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                showAlert('Password must be at least 8 characters long', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/users/customer/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: parseInt(userId),
+                        new_password: newPassword
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('Password reset successfully!', 'success');
+                    closeResetPasswordModal();
+                } else {
+                    showAlert('Failed to reset password: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showAlert('Error resetting password: ' + error.message, 'error');
+            }
+        }
+
+        async function toggleCustomerStatus(userId, newStatus) {
+            const action = newStatus === 'suspended' ? 'block' : 'unblock';
+
+            if (!confirm(`Are you sure you want to ${action} this customer?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/users/customer/toggle-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        user_status: newStatus
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert(`Customer ${action}ed successfully!`, 'success');
+                    loadUsers();
+                } else {
+                    showAlert(`Failed to ${action} customer: ` + data.message, 'error');
+                }
+            } catch (error) {
+                showAlert(`Error ${action}ing customer: ` + error.message, 'error');
+            }
+        }
+
+        // Change Own Password Functions
+        function showChangeOwnPasswordModal() {
+            document.getElementById('changeOwnPasswordModal').classList.add('active');
+        }
+
+        function closeChangeOwnPasswordModal() {
+            document.getElementById('changeOwnPasswordModal').classList.remove('active');
+            document.getElementById('changeOwnPasswordForm').reset();
+        }
+
+        async function changeOwnPassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newOwnPassword').value;
+            const confirmPassword = document.getElementById('confirmOwnPassword').value;
+
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showAlert('Please fill in all fields', 'error');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showAlert('New passwords do not match', 'error');
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                showAlert('New password must be at least 8 characters long', 'error');
+                return;
+            }
+
+            if (currentPassword === newPassword) {
+                showAlert('New password must be different from current password', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/users/reset-own-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('Password updated successfully! Please login again.', 'success');
+                    closeChangeOwnPasswordModal();
+                    // Logout after 2 seconds
+                    setTimeout(() => {
+                        logout();
+                    }, 2000);
+                } else {
+                    showAlert('Failed to update password: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showAlert('Error updating password: ' + error.message, 'error');
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/admin/auth/logout', { method: 'POST' });
+                window.location.href = '/admin/login';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/admin/login';
+            }
+        }
+    </script>
+</body>
+</html>
