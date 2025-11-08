@@ -7,9 +7,10 @@ class email_service {
     private $from_name;
     private $mail;
     
-    public function __construct($from_email = 'noreply@simplebank.com', $from_name = 'Simple Bank') {
-        $this->from_email = $from_email;
-        $this->from_name = $from_name;
+    public function __construct($from_email = null, $from_name = null) {
+        // Use environment variables if not provided
+        $this->from_email = $from_email ?? ($_ENV['SMTP_FROM_EMAIL'] ?? 'noreply@simplebank.com');
+        $this->from_name = $from_name ?? ($_ENV['SMTP_FROM_NAME'] ?? 'Simple Bank');
         $this->mail = new PHPMailer(true);
     }
     
@@ -20,17 +21,17 @@ class email_service {
         $subject = $this->get_subject($purpose);
         $message = $this->get_message($otp_code, $purpose);
         try {
-            // SMTP settings
+            // SMTP settings from environment variables
             $this->mail->isSMTP();
-            $this->mail->Host       = 'smtp.gmail.com';
+            $this->mail->Host       = $_ENV['SMTP_HOST'] ?? 'smtp.gmail.com';
             $this->mail->SMTPAuth   = true;
-            $this->mail->Username   = 'jzng436@gmail.com';  // Your Gmail address
-            $this->mail->Password   = 'jfki cmyb wxkv pjaz';     // Your 16-char app password
-            $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // or 'tls'
-            $this->mail->Port       = 587;
+            $this->mail->Username   = $_ENV['SMTP_USERNAME'] ?? '';
+            $this->mail->Password   = $_ENV['SMTP_PASSWORD'] ?? '';
+            $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $this->mail->Port       = $_ENV['SMTP_PORT'] ?? 587;
 
             // Email details
-            $this->mail->setFrom('jzng436@gmail.com', 'phpmailer');
+            $this->mail->setFrom($this->from_email, $this->from_name);
             $this->mail->addAddress($to_email, 'Dear User');
             $this->mail->isHTML(true);
             $this->mail->Subject = $subject;

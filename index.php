@@ -1,21 +1,26 @@
-<?php 
+<?php
 
 // Main entry point - handles all requests
-error_reporting(E_ALL);
-ini_set('display_errors', 0); // Don't display errors in production
-
 require_once 'vendor/autoload.php';
 require_once 'backend/function/helper.php';
 
-// Database configuration
-$db_host = 'sql207.infinityfree.com';
-$db_user = 'if0_40197402';
-$db_pass = 'Zk4Ivol6RiynT';
-$db_name = 'if0_40197402_system_database';
+// Load environment variables
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
+// Set error reporting based on environment
+$appDebug = $_ENV['APP_DEBUG'] ?? 'false';
+error_reporting(E_ALL);
+ini_set('display_errors', $appDebug === 'true' ? '1' : '0');
+
+// Database configuration from environment
+$db_host = $_ENV['DB_HOST'] ?? '127.0.0.1';
+$db_user = $_ENV['DB_USER'] ?? 'bank_user';
+$db_pass = $_ENV['DB_PASSWORD'] ?? 'bank_password';
+$db_name = $_ENV['DB_NAME'] ?? 'simple_bank_db';
 
 // HTTP request information
-$request_uri = parse_url("/".$_GET['_route']??"", PHP_URL_PATH); // this one cannot use
-// $request_uri = isset($_GET['_route']) ? "/".$_GET['_route'] : '/';
+$request_uri = parse_url("/" . ($_GET['_route'] ?? ""), PHP_URL_PATH);
 
 $request_method = $_SERVER['REQUEST_METHOD'];
 $request_host = $_SERVER['HTTP_HOST'] ?? 'localhost';
@@ -32,11 +37,11 @@ try {
     include "backend/service/database_interface_service.php";
     include "backend/service/database_service.php";
     include "backend/service/database_mysql_service.php";
-    
+
     $database = new database($db_host, $db_user, $db_pass, $db_name);
     $database_mysql_service = new database_mysql_service($database);
     $database_mysql_service->database_init($database);
-    
+
     $result = $database_mysql_service->middleware_check();
     if ($result) {
         $mysqli = $database_mysql_service->get_database_conn();
@@ -60,26 +65,29 @@ try {
     include "backend/service/config_service.php";
     include "backend/service/config_interface_service.php";
     include "backend/service/config_basic_service.php";
-    
-    // Get JWT key from database
-    $stmt = $mysqli->prepare("SELECT config_value FROM system_config WHERE config_key = 'JWT_DAILY_REFRESH_KEY'");
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($row = $result->fetch_assoc()) {
-        $jwt_key = $row['config_value'];
-    } else {
-        // Generate new key if not exists
-        $jwt_key = base64_encode(random_bytes(32));
-        $stmt = $mysqli->prepare("INSERT INTO system_config (config_key, config_value) VALUES ('JWT_DAILY_REFRESH_KEY', ?)");
-        $stmt->bind_param('s', $jwt_key);
-        $stmt->execute();
+
+    // Get JWT key from environment variable
+    $jwt_key = $_ENV['JWT_SECRET_KEY'] ?? null;
+
+    if (empty($jwt_key)) {
+        // Throw error if JWT_SECRET_KEY is not set in production
+        if (($_ENV['APP_ENV'] ?? 'production') === 'production') {
+            throw new Exception('JWT_SECRET_KEY must be set in .env file for production');
+        }
+        // Use insecure default for development only
+        $jwt_key = base64_encode('development_only_insecure_key');
+        error_log('WARNING: Using insecure JWT key. Set JWT_SECRET_KEY in .env file!');
     }
-    
+
     $config = new config($jwt_key);
 } catch (Exception $e) {
-    // Use default key if config table doesn't exist yet (for migration)
-    $config = new config(base64_encode('default_secret_key_change_in_production'));
+    // Fatal error - JWT key is required
+    http_response_code(500);
+    if (($_ENV['APP_ENV'] ?? 'production') === 'development') {
+        die('Configuration Error: ' . $e->getMessage());
+    } else {
+        die('Service Unavailable');
+    }
 }
 
 // Middleware 3: Initialize status and verify JWT
@@ -92,14 +100,14 @@ try {
     include "backend/service/jwt_service.php";
     include "backend/service/jwt_interface_service.php";
     include "backend/service/jwt_verify_service.php";
-    
+
     // Initialize status with default values
     $permission = 'guest';
     $is_login = false;
     $user_info = [];
-    
-    $status = new status($permission, $is_login, $request_uri, $request_method, $user_info, $request_host);
-    
+
+    $status = new status($permission, $is_login, $request_uri, $request_method, $request_host, $user_info);
+
     // Try to verify JWT token
     $jwt_data = new jwt($status, $config, '');
     $jwt_verify_service = new jwt_verify_service($jwt_data, $config->JWT_DAILY_REFRESH_KEY);
@@ -107,13 +115,10 @@ try {
     if ($jwt_verify_service->middleware_check()) {
         $status = $jwt_verify_service->get_jwt_data()->status;
     }
-    
 } catch (Exception $e) {
     // Continue with guest status if JWT verification fails
-    $status = new status('guest', false, $request_uri, $request_method, [], $request_host);
+    $status = new status('guest', false, $request_uri, $request_method, $request_host, []);
 }
 
 // Route the request
 include "backend/router.php";
-?>
-
