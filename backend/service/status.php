@@ -8,7 +8,7 @@ class status {
     public array $user_info;
     public string $host_name;
 
-    public function __construct(string $permission, bool $is_login, string $current_uri, string $request_method, array $user_info = [], string $host_name) {
+    public function __construct(string $permission, bool $is_login, string $current_uri, string $request_method, string $host_name, array $user_info = []) {
         $this->permission = $permission;
         $this->user_info = $user_info;
         $this->current_uri = $current_uri;
