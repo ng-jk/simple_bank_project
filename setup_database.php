@@ -1,15 +1,18 @@
 <?php
 // Database setup script - run this once to initialize the database
-// disabled all rules in htaccess to use it
 
 require_once 'vendor/autoload.php';
 require_once 'backend/migration/migrate.php';
 
-// Database configuration
-$db_host = 'sql207.infinityfree.com';
-$db_user = 'if0_40197402';
-$db_pass = 'Zk4Ivol6RiynT';
-$db_name = 'if0_40197402_system_database';
+// Load environment variables
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
+// Database configuration from environment
+$db_host = $_ENV['DB_HOST'] ?? '127.0.0.1';
+$db_user = $_ENV['DB_USER'] ?? 'bank_user';
+$db_pass = $_ENV['DB_PASSWORD'] ?? 'bank_password';
+$db_name = $_ENV['DB_NAME'] ?? 'simple_bank_db';
 
 echo "Connecting to database...\n";
 
