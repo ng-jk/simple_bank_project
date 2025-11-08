@@ -201,17 +201,66 @@ class transaction_model {
         $stmt->bind_param('s', $reference_number);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         $transactions = [];
         while ($row = $result->fetch_assoc()) {
             $transactions[] = $row;
         }
-        
+
         if (count($transactions) > 0) {
             return ['success' => true, 'transactions' => $transactions];
         }
-        
+
         return ['success' => false, 'error' => 'Transaction not found'];
+    }
+
+    public function get_account_transactions_by_date_range($account_id, $start_date, $end_date) {
+        // Get transactions within date range for statement generation
+        $stmt = $this->mysqli->prepare("
+            SELECT * FROM bank_transaction
+            WHERE (account_id = ? OR related_account_id = ?)
+            AND created_at >= ?
+            AND created_at <= ?
+            ORDER BY created_at ASC
+        ");
+        $stmt->bind_param('iiss', $account_id, $account_id, $start_date, $end_date);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $transactions = [];
+        while ($row = $result->fetch_assoc()) {
+            // If this account is the receiver (in related_account_id), flip the amount sign
+            if ($row['related_account_id'] == $account_id && $row['transaction_type'] == 'transfer') {
+                $row['amount'] = abs($row['amount']); // Make it positive (incoming)
+            }
+            $transactions[] = $row;
+        }
+
+        return ['success' => true, 'transactions' => $transactions];
+    }
+
+    public function get_balance_at_date($account_id, $date) {
+        // Get balance at start of specified date
+        // Only check account_id, not related_account_id, because balance_after is for the owning account
+        $stmt = $this->mysqli->prepare("
+            SELECT balance_after
+            FROM bank_transaction
+            WHERE account_id = ?
+            AND created_at < ?
+            ORDER BY created_at DESC
+            LIMIT 1
+        ");
+        $stmt->bind_param('is', $account_id, $date);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            return ['success' => true, 'balance' => $row['balance_after']];
+        }
+
+        // No previous transactions, return 0
+        return ['success' => true, 'balance' => 0];
     }
 }
 ?>

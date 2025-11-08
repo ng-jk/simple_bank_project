@@ -5,15 +5,20 @@
 require_once __DIR__ . '/controller/auth_controller.php';
 require_once __DIR__ . '/controller/account_controller.php';
 require_once __DIR__ . '/controller/transaction_controller.php';
+require_once __DIR__ . '/controller/statement_controller.php';
 
 // Initialize controllers
 $auth_controller = new auth_controller($mysqli, $config->JWT_DAILY_REFRESH_KEY);
 $account_controller = new account_controller($mysqli);
 $transaction_controller = new transaction_controller($mysqli);
+$statement_controller = new statement_controller($mysqli);
 
 // API routes
 if (strpos($request_uri, '/api/') !== false) {
-    header('Content-Type: application/json');
+    // Don't set JSON header for PDF download endpoint - it sets its own headers
+    if (!preg_match('/^\/api\/accounts\/\d+\/statements\/download$/', $request_uri)) {
+        header('Content-Type: application/json');
+    }
 
     // Authentication routes
     // OTP-based registration (new flow)
@@ -137,7 +142,22 @@ if (strpos($request_uri, '/api/') !== false) {
         echo json_encode($result);
         exit;
     }
-    
+
+    // Statement routes
+    if (preg_match('/^\/api\/accounts\/(\d+)\/statements\/months$/', $request_uri, $matches) && $request_method == 'GET') {
+        $account_id = $matches[1];
+        $result = $statement_controller->get_available_statement_months($status, $account_id);
+        echo json_encode($result);
+        exit;
+    }
+
+    if (preg_match('/^\/api\/accounts\/(\d+)\/statements\/download$/', $request_uri, $matches) && $request_method == 'GET') {
+        $account_id = $matches[1];
+        // This endpoint outputs PDF directly, no JSON response
+        $statement_controller->generate_statement($status, $account_id);
+        exit;
+    }
+
     // API route not found
     http_response_code(404);
     echo json_encode(['success' => false, 'error' => "API endpoint not found"]);
