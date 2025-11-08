@@ -111,7 +111,19 @@ if (strpos($request_uri, '/api/') !== false) {
         echo json_encode($result);
         exit;
     }
-    
+
+    if ($request_uri == '/api/transactions/paybill' && $request_method == 'POST') {
+        $result = $transaction_controller->pay_bill($status);
+        echo json_encode($result);
+        exit;
+    }
+
+    if ($request_uri == '/api/payees' && $request_method == 'GET') {
+        $result = $transaction_controller->get_payees($status);
+        echo json_encode($result);
+        exit;
+    }
+
     if (preg_match('/^\/api\/accounts\/(\d+)\/transactions$/', $request_uri, $matches) && $request_method == 'GET') {
         $account_id = $matches[1];
         $result = $transaction_controller->get_account_transactions($status, $account_id);
