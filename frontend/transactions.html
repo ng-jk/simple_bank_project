@@ -331,12 +331,13 @@
                 item.className = 'transaction-item';
                 
                 const icon = getTransactionIcon(transaction.transaction_type);
-                const isPositive = transaction.transaction_type === 'deposit' || 
-                                  (transaction.transaction_type === 'transfer' && transaction.related_account_id);
-                
+                // Determine if amount is positive based on the actual amount value
+                const isPositive = parseFloat(transaction.amount) >= 0;
+                const absoluteAmount = Math.abs(parseFloat(transaction.amount));
+
                 const date = new Date(transaction.created_at);
                 const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-                
+
                 item.innerHTML = `
                     <div class="transaction-icon icon-${transaction.transaction_type}">
                         ${icon}
@@ -347,7 +348,7 @@
                         <p>Ref: ${transaction.reference_number}</p>
                     </div>
                     <div class="transaction-amount ${isPositive ? 'amount-positive' : 'amount-negative'}">
-                        ${isPositive ? '+' : '-'}${transaction.currency} ${parseFloat(transaction.amount).toFixed(2)}
+                        ${isPositive ? '+' : '-'}${transaction.currency} ${absoluteAmount.toFixed(2)}
                     </div>
                     <div class="transaction-date">
                         ${formattedDate}
