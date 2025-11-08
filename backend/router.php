@@ -7,6 +7,7 @@ require_once __DIR__ . '/controller/account_controller.php';
 require_once __DIR__ . '/controller/transaction_controller.php';
 require_once __DIR__ . '/controller/statement_controller.php';
 require_once __DIR__ . '/controller/admin_controller.php';
+require_once __DIR__ . '/controller/user_controller.php';
 
 // Initialize controllers
 $auth_controller = new auth_controller($mysqli, $config->JWT_DAILY_REFRESH_KEY);
@@ -14,6 +15,7 @@ $account_controller = new account_controller($mysqli);
 $transaction_controller = new transaction_controller($mysqli);
 $statement_controller = new statement_controller($mysqli);
 $admin_controller = new admin_controller($mysqli, $config->JWT_DAILY_REFRESH_KEY);
+$user_controller = new user_controller($mysqli);
 
 // API routes
 if (strpos($request_uri, '/api/') !== false) {
@@ -82,6 +84,54 @@ if (strpos($request_uri, '/api/') !== false) {
 
     if ($request_uri == '/api/admin/auth/me' && $request_method == 'GET') {
         $result = $admin_controller->get_current_user($status);
+        echo json_encode($result);
+        exit;
+    }
+
+    // Admin user management routes
+    if ($request_uri == '/api/admin/users' && $request_method == 'GET') {
+        $user_controller->get_users($status);
+        exit;
+    }
+
+    if ($request_uri == '/api/admin/users/staff' && $request_method == 'POST') {
+        $user_controller->create_staff($status);
+        exit;
+    }
+
+    if ($request_uri == '/api/admin/users/staff' && $request_method == 'PUT') {
+        $user_controller->update_staff($status);
+        exit;
+    }
+
+    if ($request_uri == '/api/admin/users/staff' && $request_method == 'DELETE') {
+        $user_controller->delete_staff($status);
+        exit;
+    }
+
+    if ($request_uri == '/api/admin/users/staff/reset-password' && $request_method == 'POST') {
+        $user_controller->reset_staff_password($status);
+        exit;
+    }
+
+    if ($request_uri == '/api/admin/users/customer/reset-password' && $request_method == 'POST') {
+        $user_controller->reset_customer_password($status);
+        exit;
+    }
+
+    if ($request_uri == '/api/admin/users/customer/toggle-status' && $request_method == 'POST') {
+        $user_controller->toggle_customer_status($status);
+        exit;
+    }
+
+    if ($request_uri == '/api/admin/users/reset-own-password' && $request_method == 'POST') {
+        $user_controller->reset_own_password($status);
+        exit;
+    }
+
+    // Admin statistics route
+    if ($request_uri == '/api/admin/statistics' && $request_method == 'GET') {
+        $result = $admin_controller->get_statistics($status);
         echo json_encode($result);
         exit;
     }
@@ -201,11 +251,12 @@ $page_routes = [
     '/transactions' => 'frontend/transactions.html',
     '/transfer' => 'frontend/transfer.html',
     '/admin/login' => 'frontend/admin/login.html',
-    '/admin/dashboard' => 'frontend/admin/dashboard.html'
+    '/admin/dashboard' => 'frontend/admin/dashboard.html',
+    '/admin/users' => 'frontend/admin/users.html'
 ];
 
 // Define admin-only and user-only routes
-$admin_routes = ['/admin/dashboard'];
+$admin_routes = ['/admin/dashboard', '/admin/users'];
 $user_routes = ['/dashboard', '/accounts', '/transactions', '/transfer'];
 
 // Serve frontend pages with server data injection

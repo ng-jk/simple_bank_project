@@ -195,6 +195,105 @@
             border-radius: 5px;
             margin-bottom: 1rem;
         }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            font-size: 1rem;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-primary:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -208,6 +307,7 @@
                 <div class="username" id="username">Loading...</div>
                 <div class="user-role">Administrator</div>
             </div>
+            <button class="logout-btn" id="change-password-btn" style="background: #f39c12; margin-right: 0.5rem;">Change Password</button>
             <button class="logout-btn" id="logout-btn">Logout</button>
         </div>
     </header>
@@ -241,11 +341,36 @@
             <div class="actions">
                 <h2>Quick Actions</h2>
                 <div class="action-buttons">
-                    <button class="action-btn">Manage Users</button>
-                    <button class="action-btn">View All Accounts</button>
-                    <button class="action-btn">System Settings</button>
+                    <button class="action-btn" onclick="window.location.href='/admin/users'">Manage Users</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Change Password</h2>
+                <button class="close" id="closeModal">&times;</button>
+            </div>
+            <div id="modal-error" class="error" style="display: none;"></div>
+            <div id="modal-success" class="success" style="display: none;"></div>
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <label for="currentPassword">Current Password</label>
+                    <input type="password" id="currentPassword" name="currentPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" name="newPassword" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm New Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required minlength="8">
+                </div>
+                <button type="submit" class="btn-primary" id="submitPasswordChange">Change Password</button>
+            </form>
         </div>
     </div>
 
@@ -281,6 +406,99 @@
             // Load dashboard data
             loadDashboardData();
 
+            // Change password modal handlers
+            const changePasswordBtn = document.getElementById('change-password-btn');
+            const modal = document.getElementById('changePasswordModal');
+            const closeModal = document.getElementById('closeModal');
+            const changePasswordForm = document.getElementById('changePasswordForm');
+            const modalError = document.getElementById('modal-error');
+            const modalSuccess = document.getElementById('modal-success');
+
+            changePasswordBtn.addEventListener('click', function() {
+                modal.style.display = 'block';
+                modalError.style.display = 'none';
+                modalSuccess.style.display = 'none';
+                changePasswordForm.reset();
+            });
+
+            closeModal.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+
+            changePasswordForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                // Clear previous messages
+                modalError.style.display = 'none';
+                modalSuccess.style.display = 'none';
+
+                // Validate passwords match
+                if (newPassword !== confirmPassword) {
+                    modalError.textContent = 'New passwords do not match';
+                    modalError.style.display = 'block';
+                    return;
+                }
+
+                // Validate password length
+                if (newPassword.length < 8) {
+                    modalError.textContent = 'Password must be at least 8 characters long';
+                    modalError.style.display = 'block';
+                    return;
+                }
+
+                // Disable submit button
+                const submitBtn = document.getElementById('submitPasswordChange');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Changing Password...';
+
+                // Send request to change password
+                fetch('/api/admin/users/reset-own-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Change Password';
+
+                    if (data.success) {
+                        modalSuccess.textContent = 'Password changed successfully!';
+                        modalSuccess.style.display = 'block';
+                        changePasswordForm.reset();
+
+                        // Close modal after 2 seconds
+                        setTimeout(() => {
+                            modal.style.display = 'none';
+                        }, 2000);
+                    } else {
+                        modalError.textContent = data.message || 'Failed to change password';
+                        modalError.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Change Password';
+                    modalError.textContent = 'An error occurred. Please try again.';
+                    modalError.style.display = 'block';
+                });
+            });
+
             // Logout handler
             logoutBtn.addEventListener('click', function() {
                 if (confirm('Are you sure you want to logout?')) {
@@ -302,18 +520,38 @@
             });
 
             function loadDashboardData() {
-                // For now, show placeholder data
-                // In the future, you can fetch real statistics from API endpoints
-                setTimeout(() => {
+                fetch('/api/admin/statistics', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
                     loadingDiv.style.display = 'none';
                     dashboardContent.style.display = 'block';
 
-                    // Placeholder statistics
+                    if (data.success && data.statistics) {
+                        document.getElementById('total-users').textContent = data.statistics.total_users;
+                        document.getElementById('total-accounts').textContent = data.statistics.total_accounts;
+                        document.getElementById('total-transactions').textContent = data.statistics.total_transactions;
+                    } else {
+                        // If failed to fetch stats, show zeros
+                        document.getElementById('total-users').textContent = '0';
+                        document.getElementById('total-accounts').textContent = '0';
+                        document.getElementById('total-transactions').textContent = '0';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading dashboard data:', error);
+                    loadingDiv.style.display = 'none';
+                    dashboardContent.style.display = 'block';
+
+                    // Show zeros on error
                     document.getElementById('total-users').textContent = '0';
                     document.getElementById('total-accounts').textContent = '0';
                     document.getElementById('total-transactions').textContent = '0';
-                    document.getElementById('total-balance').textContent = 'RM 0.00';
-                }, 500);
+                });
             }
         });
     </script>

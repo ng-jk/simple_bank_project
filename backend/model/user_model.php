@@ -90,11 +90,11 @@ class user_model {
     }
     
     public function update_user($user_id, $data) {
-        $allowed_fields = ['user_name', 'user_email', 'user_role', 'user_status'];
+        $allowed_fields = ['user_name', 'user_email', 'user_role', 'user_status', 'user_password'];
         $updates = [];
         $params = [];
         $types = '';
-        
+
         foreach ($data as $key => $value) {
             if (in_array($key, $allowed_fields)) {
                 $updates[] = "$key = ?";
