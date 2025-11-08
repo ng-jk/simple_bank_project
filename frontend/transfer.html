@@ -198,6 +198,7 @@
                 <button class="tab active" data-tab="transfer">Transfer</button>
                 <button class="tab" data-tab="deposit">Deposit</button>
                 <button class="tab" data-tab="withdraw">Withdraw</button>
+                <button class="tab" data-tab="paybill">Pay Bill</button>
             </div>
             
             <!-- Transfer Tab -->
@@ -267,7 +268,7 @@
             <div id="withdraw-tab" class="tab-content">
                 <div id="withdraw-error" class="error"></div>
                 <div id="withdraw-success" class="success"></div>
-                
+
                 <form id="withdraw-form">
                     <div class="form-group">
                         <label for="withdraw-account">Account</label>
@@ -275,22 +276,65 @@
                             <option value="">Select account...</option>
                         </select>
                     </div>
-                    
+
                     <div id="withdraw-account-info" class="account-info" style="display: none;">
                         <p><strong>Balance:</strong> <span id="withdraw-balance">0.00</span></p>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="withdraw-amount">Amount</label>
                         <input type="number" id="withdraw-amount" step="0.01" min="0.01" placeholder="0.00" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="withdraw-description">Description (Optional)</label>
                         <textarea id="withdraw-description" rows="3" placeholder="Enter withdrawal description"></textarea>
                     </div>
-                    
+
                     <button type="submit" class="btn" id="withdraw-btn">Withdraw Money</button>
+                </form>
+            </div>
+
+            <!-- Pay Bill Tab -->
+            <div id="paybill-tab" class="tab-content">
+                <div id="paybill-error" class="error"></div>
+                <div id="paybill-success" class="success"></div>
+
+                <form id="paybill-form">
+                    <div class="form-group">
+                        <label for="paybill-from-account">Pay From</label>
+                        <select id="paybill-from-account" required>
+                            <option value="">Select account...</option>
+                        </select>
+                    </div>
+
+                    <div id="paybill-account-info" class="account-info" style="display: none;">
+                        <p><strong>Balance:</strong> <span id="paybill-balance">0.00</span></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="paybill-payee">Pay To (Company)</label>
+                        <select id="paybill-payee" required>
+                            <option value="">Select company...</option>
+                        </select>
+                    </div>
+
+                    <div id="payee-info" class="account-info" style="display: none;">
+                        <p><strong>Company:</strong> <span id="payee-name"></span></p>
+                        <p><strong>Category:</strong> <span id="payee-category"></span></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="paybill-amount">Amount</label>
+                        <input type="number" id="paybill-amount" step="0.01" min="0.01" placeholder="0.00" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="paybill-description">Reference / Description (Optional)</label>
+                        <textarea id="paybill-description" rows="3" placeholder="Enter bill reference or description"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn" id="paybill-btn">Pay Bill</button>
                 </form>
             </div>
         </div>
@@ -298,14 +342,15 @@
     
     <script>
         let accounts = [];
-        
+        let payees = [];
+
         window.addEventListener('load', function() {
             // Check if user is logged in
             if (!window.serverData || window.serverData.metadata.login_status !== 'login') {
                 window.location.href = '/login';
                 return;
             }
-            
+
             // Load accounts
             fetch('/api/accounts')
                 .then(response => response.json())
@@ -313,6 +358,16 @@
                     if (data.success) {
                         accounts = data.accounts;
                         populateAccountSelects();
+                    }
+                });
+
+            // Load payees
+            fetch('/api/payees')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        payees = data.payees;
+                        populatePayeeSelect();
                     }
                 });
             
@@ -333,7 +388,8 @@
             document.getElementById('transfer-form').addEventListener('submit', handleTransfer);
             document.getElementById('deposit-form').addEventListener('submit', handleDeposit);
             document.getElementById('withdraw-form').addEventListener('submit', handleWithdraw);
-            
+            document.getElementById('paybill-form').addEventListener('submit', handlePayBill);
+
             // Account balance display
             document.getElementById('from-account').addEventListener('change', function() {
                 const account = accounts.find(a => a.account_id == this.value);
@@ -342,12 +398,29 @@
                     document.getElementById('from-balance').textContent = `${account.currency} ${parseFloat(account.balance).toFixed(2)}`;
                 }
             });
-            
+
             document.getElementById('withdraw-account').addEventListener('change', function() {
                 const account = accounts.find(a => a.account_id == this.value);
                 if (account) {
                     document.getElementById('withdraw-account-info').style.display = 'block';
                     document.getElementById('withdraw-balance').textContent = `${account.currency} ${parseFloat(account.balance).toFixed(2)}`;
+                }
+            });
+
+            document.getElementById('paybill-from-account').addEventListener('change', function() {
+                const account = accounts.find(a => a.account_id == this.value);
+                if (account) {
+                    document.getElementById('paybill-account-info').style.display = 'block';
+                    document.getElementById('paybill-balance').textContent = `${account.currency} ${parseFloat(account.balance).toFixed(2)}`;
+                }
+            });
+
+            document.getElementById('paybill-payee').addEventListener('change', function() {
+                const payee = payees.find(p => p.payee_id == this.value);
+                if (payee) {
+                    document.getElementById('payee-info').style.display = 'block';
+                    document.getElementById('payee-name').textContent = payee.payee_name;
+                    document.getElementById('payee-category').textContent = payee.payee_category.charAt(0).toUpperCase() + payee.payee_category.slice(1);
                 }
             });
             
@@ -365,18 +438,30 @@
         });
         
         function populateAccountSelects() {
-            const selects = ['from-account', 'deposit-account', 'withdraw-account'];
-            
+            const selects = ['from-account', 'deposit-account', 'withdraw-account', 'paybill-from-account'];
+
             selects.forEach(selectId => {
                 const select = document.getElementById(selectId);
                 select.innerHTML = '<option value="">Select account...</option>';
-                
+
                 accounts.forEach(account => {
                     const option = document.createElement('option');
                     option.value = account.account_id;
                     option.textContent = `${account.account_type.toUpperCase()} - ${account.account_number} (${account.currency} ${parseFloat(account.balance).toFixed(2)})`;
                     select.appendChild(option);
                 });
+            });
+        }
+
+        function populatePayeeSelect() {
+            const select = document.getElementById('paybill-payee');
+            select.innerHTML = '<option value="">Select company...</option>';
+
+            payees.forEach(payee => {
+                const option = document.createElement('option');
+                option.value = payee.payee_id;
+                option.textContent = `${payee.payee_name} (${payee.payee_category})`;
+                select.appendChild(option);
             });
         }
         
@@ -467,21 +552,21 @@
         
         function handleWithdraw(e) {
             e.preventDefault();
-            
+
             const errorDiv = document.getElementById('withdraw-error');
             const successDiv = document.getElementById('withdraw-success');
             const btn = document.getElementById('withdraw-btn');
-            
+
             errorDiv.style.display = 'none';
             successDiv.style.display = 'none';
             btn.disabled = true;
-            
+
             const data = {
                 account_id: parseInt(document.getElementById('withdraw-account').value),
                 amount: parseFloat(document.getElementById('withdraw-amount').value),
                 description: document.getElementById('withdraw-description').value
             };
-            
+
             fetch('/api/transactions/withdraw', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -493,6 +578,51 @@
                     successDiv.textContent = `Withdrawal successful! Reference: ${result.reference}. New balance: ${result.new_balance}`;
                     successDiv.style.display = 'block';
                     document.getElementById('withdraw-form').reset();
+                    setTimeout(() => window.location.href = '/dashboard', 2000);
+                } else {
+                    errorDiv.textContent = result.error;
+                    errorDiv.style.display = 'block';
+                }
+                btn.disabled = false;
+            })
+            .catch(error => {
+                errorDiv.textContent = 'An error occurred';
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+            });
+        }
+
+        function handlePayBill(e) {
+            e.preventDefault();
+
+            const errorDiv = document.getElementById('paybill-error');
+            const successDiv = document.getElementById('paybill-success');
+            const btn = document.getElementById('paybill-btn');
+
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            btn.disabled = true;
+
+            const data = {
+                from_account_id: parseInt(document.getElementById('paybill-from-account').value),
+                payee_id: parseInt(document.getElementById('paybill-payee').value),
+                amount: parseFloat(document.getElementById('paybill-amount').value),
+                description: document.getElementById('paybill-description').value
+            };
+
+            fetch('/api/transactions/paybill', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    successDiv.textContent = `Bill payment successful! Reference: ${result.reference}. New balance: ${result.new_balance}`;
+                    successDiv.style.display = 'block';
+                    document.getElementById('paybill-form').reset();
+                    document.getElementById('paybill-account-info').style.display = 'none';
+                    document.getElementById('payee-info').style.display = 'none';
                     setTimeout(() => window.location.href = '/dashboard', 2000);
                 } else {
                     errorDiv.textContent = result.error;
