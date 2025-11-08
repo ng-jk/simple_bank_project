@@ -167,6 +167,65 @@
         .empty-state h3 {
             margin-bottom: 1rem;
         }
+
+        .statement-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #eee;
+            display: none;
+        }
+
+        .statement-section.active {
+            display: block;
+        }
+
+        .statement-section h3 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .statement-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .statement-controls label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .statement-controls select {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .download-btn {
+            padding: 0.6rem 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .download-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
     </style>
 </head>
 <body>
@@ -189,6 +248,17 @@
                 <select id="account-filter">
                     <option value="">All Accounts</option>
                 </select>
+            </div>
+
+            <div id="statement-section" class="statement-section">
+                <h3>📄 Generate Bank Statement</h3>
+                <div class="statement-controls">
+                    <label for="statement-month">Select Month:</label>
+                    <select id="statement-month">
+                        <option value="">Select a month...</option>
+                    </select>
+                    <button id="download-statement-btn" class="download-btn" disabled>Download PDF</button>
+                </div>
             </div>
         </div>
         
@@ -224,9 +294,33 @@
                 const accountId = this.value;
                 if (accountId) {
                     loadAccountTransactions(accountId);
+                    loadStatementMonths(accountId);
+                    document.getElementById('statement-section').classList.add('active');
                 } else {
                     loadAllTransactions();
+                    document.getElementById('statement-section').classList.remove('active');
+                    document.getElementById('statement-month').innerHTML = '<option value="">Select a month...</option>';
                 }
+            });
+
+            // Statement month change
+            document.getElementById('statement-month').addEventListener('change', function() {
+                const downloadBtn = document.getElementById('download-statement-btn');
+                downloadBtn.disabled = !this.value;
+            });
+
+            // Download statement button
+            document.getElementById('download-statement-btn').addEventListener('click', function() {
+                const accountId = document.getElementById('account-filter').value;
+                const monthValue = document.getElementById('statement-month').value;
+
+                if (!accountId || !monthValue) {
+                    alert('Please select an account and month');
+                    return;
+                }
+
+                const [year, month] = monthValue.split('-');
+                downloadStatement(accountId, month, year);
             });
             
             // Logout
@@ -366,6 +460,88 @@
                 'transfer': '🔄'
             };
             return icons[type] || '📝';
+        }
+
+        function loadStatementMonths(accountId) {
+            const select = document.getElementById('statement-month');
+            select.innerHTML = '<option value="">Loading months...</option>';
+            select.disabled = true;
+
+            fetch(`/api/accounts/${accountId}/statements/months`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        select.innerHTML = '<option value="">Select a month...</option>';
+
+                        if (data.months.length === 0) {
+                            select.innerHTML = '<option value="">No transactions available</option>';
+                        } else {
+                            data.months.forEach(month => {
+                                const option = document.createElement('option');
+                                option.value = `${month.year}-${month.month}`;
+                                option.textContent = month.label;
+                                select.appendChild(option);
+                            });
+                        }
+                        select.disabled = false;
+                    } else {
+                        select.innerHTML = '<option value="">Error loading months</option>';
+                    }
+                })
+                .catch(error => {
+                    select.innerHTML = '<option value="">Error loading months</option>';
+                });
+        }
+
+        function downloadStatement(accountId, month, year) {
+            const downloadBtn = document.getElementById('download-statement-btn');
+            const originalText = downloadBtn.textContent;
+
+            downloadBtn.textContent = 'Generating PDF...';
+            downloadBtn.disabled = true;
+
+            // First check if there's an error by fetching with XHR
+            const url = `/api/accounts/${accountId}/statements/download?month=${month}&year=${year}`;
+
+            // Use fetch to check for errors first
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.error || 'Failed to generate statement');
+                        });
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Check if it's actually a PDF or JSON error
+                    if (blob.type === 'application/json') {
+                        return blob.text().then(text => {
+                            const error = JSON.parse(text);
+                            throw new Error(error.error || 'Failed to generate statement');
+                        });
+                    }
+
+                    // Create download link
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = downloadUrl;
+                    a.download = `statement_${accountId}_${year}_${month}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(downloadUrl);
+                    document.body.removeChild(a);
+
+                    // Reset button
+                    downloadBtn.textContent = originalText;
+                    downloadBtn.disabled = false;
+                })
+                .catch(error => {
+                    alert('Error generating statement: ' + error.message);
+                    downloadBtn.textContent = originalText;
+                    downloadBtn.disabled = false;
+                });
         }
     </script>
 </body>
