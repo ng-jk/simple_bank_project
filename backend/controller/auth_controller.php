@@ -75,13 +75,13 @@ class auth_controller {
             return [
                 'success' => false,
                 'error' => $email_result['error'],
-                'email' => $data['email']
+                'email' => $data['user_email']
             ];
         }else{
             return [
                 'success' => true,
-                'message' => 'OTP resent to your email',
-                'email' => $data['email']
+                'message' => 'OTP sent to your email',
+                'email' => $data['user_email']
             ];
         }
     }
@@ -238,8 +238,8 @@ class auth_controller {
                 true,
                 $_SERVER['REQUEST_URI'],
                 $_SERVER['REQUEST_METHOD'],
-                $user,
-                $_SERVER['HTTP_HOST']
+                $_SERVER['HTTP_HOST'],
+                $user
             );
             
             $config = new config($this->secret_key);
