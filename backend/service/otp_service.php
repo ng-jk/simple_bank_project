@@ -1,11 +1,14 @@
 <?php
+require_once __DIR__ . '/../util/EncryptionHelper.php';
 
 class otp_service {
     private $mysqli;
+    private $encryption_key;
     private $otp_expiry_minutes = 10; // OTP valid for 10 minutes
 
     public function __construct($mysqli) {
         $this->mysqli = $mysqli;
+        $this->encryption_key = EncryptionHelper::getKey();
     }
 
     /**
@@ -53,9 +56,39 @@ class otp_service {
             $user_data_json = json_encode($user_data);
         }
 
-        // Store OTP with data and audit trail
-        $stmt = $this->mysqli->prepare("INSERT INTO otp_verification (email, user_id, otp_code, purpose, user_data, ip_address, user_agent, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME(?))");
-        $stmt->bind_param('sisssssi', $email, $user_id, $otp_code, $purpose, $user_data_json, $ip_address, $user_agent, $expires_timestamp);
+        // Store OTP with encrypted data
+        $stmt = $this->mysqli->prepare("
+            INSERT INTO otp_verification (
+                email,
+                user_id,
+                otp_code,
+                purpose,
+                user_data,
+                ip_address,
+                user_agent,
+                expires_at
+            ) VALUES (
+                ?,
+                ?,
+                AES_ENCRYPT(?, ?),
+                ?,
+                AES_ENCRYPT(?, ?),
+                ?,
+                ?,
+                FROM_UNIXTIME(?)
+            )
+        ");
+        $stmt->bind_param(
+            'sisssssssi',
+            $email,
+            $user_id,
+            $otp_code, $this->encryption_key,
+            $purpose,
+            $user_data_json, $this->encryption_key,
+            $ip_address,
+            $user_agent,
+            $expires_timestamp
+        );
 
         if ($stmt->execute()) {
             return [
@@ -78,13 +111,17 @@ class otp_service {
      * @param int|null $user_id User ID to verify against (for added security on login/password_reset)
      */
     public function verify_otp($email, $otp_code, $purpose = 'registration', $user_id = null) {
-        // Build query with optional user_id check for enhanced security
+        // Build query with optional user_id check for enhanced security (use encrypted otp_code)
         if ($user_id !== null) {
             $stmt = $this->mysqli->prepare("
-                SELECT otp_id, user_id, user_data, expires_at
+                SELECT
+                    otp_id,
+                    user_id,
+                    AES_DECRYPT(user_data, ?) as user_data,
+                    expires_at
                 FROM otp_verification
                 WHERE email = ?
-                AND otp_code = ?
+                AND otp_code = AES_ENCRYPT(?, ?)
                 AND purpose = ?
                 AND user_id = ?
                 AND is_verified = FALSE
@@ -92,20 +129,35 @@ class otp_service {
                 ORDER BY created_at DESC
                 LIMIT 1
             ");
-            $stmt->bind_param('sssi', $email, $otp_code, $purpose, $user_id);
+            $stmt->bind_param('sssssi',
+                $this->encryption_key,
+                $email,
+                $otp_code, $this->encryption_key,
+                $purpose,
+                $user_id
+            );
         } else {
             $stmt = $this->mysqli->prepare("
-                SELECT otp_id, user_id, user_data, expires_at
+                SELECT
+                    otp_id,
+                    user_id,
+                    AES_DECRYPT(user_data, ?) as user_data,
+                    expires_at
                 FROM otp_verification
                 WHERE email = ?
-                AND otp_code = ?
+                AND otp_code = AES_ENCRYPT(?, ?)
                 AND purpose = ?
                 AND is_verified = FALSE
                 AND UNIX_TIMESTAMP(expires_at) > UNIX_TIMESTAMP()
                 ORDER BY created_at DESC
                 LIMIT 1
             ");
-            $stmt->bind_param('sss', $email, $otp_code, $purpose);
+            $stmt->bind_param('sssss',
+                $this->encryption_key,
+                $email,
+                $otp_code, $this->encryption_key,
+                $purpose
+            );
         }
 
         $stmt->execute();
