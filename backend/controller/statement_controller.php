@@ -182,7 +182,7 @@ class statement_controller {
                 MIN(DATE_FORMAT(created_at, '%Y-%m-01')) as earliest_month,
                 MAX(DATE_FORMAT(created_at, '%Y-%m-01')) as latest_month
             FROM bank_transaction
-            WHERE account_id = ? OR related_account_id = ?
+            WHERE account_id = ? OR destination_account_id = ?
         ");
         $stmt->bind_param('ii', $account_id, $account_id);
         $stmt->execute();

@@ -57,13 +57,24 @@ class auth_controller {
             'role' => $data['role'] ?? 'user'
         ];
         
-        // Create OTP
-        $otp_result = $this->otp_service->create_otp($data['user_email'], 'registration', $user_data);
-        
+        // Get audit trail information
+        $ip_address = $_SERVER['REMOTE_ADDR'] ?? null;
+        $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+
+        // Create OTP (no user_id for registration since user doesn't exist yet)
+        $otp_result = $this->otp_service->create_otp(
+            $data['user_email'],
+            'registration',
+            $user_data,
+            null, // user_id is null for registration
+            $ip_address,
+            $user_agent
+        );
+
         if (!$otp_result['success']) {
             return $otp_result;
         }
-        
+
         // Send OTP via email
         $email_result = $this->email_service->send_otp_email(
             $data['user_email'],
@@ -158,10 +169,31 @@ class auth_controller {
         if ($data['purpose'] === 'registration' && isset($data['user_data'])) {
             $user_data = $data['user_data'];
         }
-        
+
+        // Get user_id if this is for an existing user
+        $user_id = null;
+        if ($data['purpose'] !== 'registration') {
+            // For login/password_reset, try to get user_id from email
+            $user_result = $this->user_model->get_user_by_email($data['email']);
+            if ($user_result['success']) {
+                $user_id = $user_result['user']['user_id'];
+            }
+        }
+
+        // Get audit trail information
+        $ip_address = $_SERVER['REMOTE_ADDR'] ?? null;
+        $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+
         // Resend OTP
-        $otp_result = $this->otp_service->resend_otp($data['email'], $data['purpose'], $user_data);
-        
+        $otp_result = $this->otp_service->resend_otp(
+            $data['email'],
+            $data['purpose'],
+            $user_data,
+            $user_id,
+            $ip_address,
+            $user_agent
+        );
+
         if (!$otp_result['success']) {
             return $otp_result;
         }
@@ -220,6 +252,111 @@ class auth_controller {
         return $result;
     }
     
+    /**
+     * Request password reset OTP
+     */
+    public function request_password_reset() {
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        if (!isset($data['email'])) {
+            return ['success' => false, 'error' => 'Email is required'];
+        }
+
+        // Check if user exists
+        $user_result = $this->user_model->get_user_by_email($data['email']);
+        if (!$user_result['success']) {
+            // For security, don't reveal if email exists or not
+            return [
+                'success' => true,
+                'message' => 'If an account with this email exists, an OTP has been sent'
+            ];
+        }
+
+        $user = $user_result['user'];
+
+        // Get audit trail information
+        $ip_address = $_SERVER['REMOTE_ADDR'] ?? null;
+        $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+
+        // Create OTP linked to user
+        $otp_result = $this->otp_service->create_otp(
+            $data['email'],
+            'password_reset',
+            null, // no user_data needed
+            $user['user_id'], // link to user for security
+            $ip_address,
+            $user_agent
+        );
+
+        if (!$otp_result['success']) {
+            return $otp_result;
+        }
+
+        // Send OTP via email
+        $email_result = $this->email_service->send_otp_email(
+            $data['email'],
+            $otp_result['otp_code'],
+            'password_reset'
+        );
+
+        if (!$email_result['success']) {
+            return ['success' => false, 'error' => 'Failed to send OTP email'];
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Password reset OTP sent to your email'
+        ];
+    }
+
+    /**
+     * Verify password reset OTP and reset password
+     */
+    public function verify_password_reset() {
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        if (!isset($data['email']) || !isset($data['otp_code']) || !isset($data['new_password'])) {
+            return ['success' => false, 'error' => 'Missing required fields'];
+        }
+
+        // Get user to link verification
+        $user_result = $this->user_model->get_user_by_email($data['email']);
+        if (!$user_result['success']) {
+            return ['success' => false, 'error' => 'Invalid request'];
+        }
+
+        $user = $user_result['user'];
+
+        // Verify OTP with user_id for enhanced security
+        $verify_result = $this->otp_service->verify_otp(
+            $data['email'],
+            $data['otp_code'],
+            'password_reset',
+            $user['user_id']
+        );
+
+        if (!$verify_result['success']) {
+            return $verify_result;
+        }
+
+        // Hash new password
+        $hashed_password = password_hash($data['new_password'], PASSWORD_BCRYPT);
+
+        // Update password
+        $update_result = $this->user_model->update_user($user['user_id'], [
+            'user_password' => $hashed_password
+        ]);
+
+        if (!$update_result['success']) {
+            return ['success' => false, 'error' => 'Failed to update password'];
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Password reset successfully. You can now login with your new password.'
+        ];
+    }
+
     public function login() {
         $data = json_decode(file_get_contents('php://input'), true);
 
@@ -266,7 +403,7 @@ class auth_controller {
                 'user' => $user
             ];
         }
-        
+
         return $result;
     }
     

@@ -30,22 +30,28 @@ class transaction_controller {
         if (!$status->is_login) {
             return ['success' => false, 'error' => 'Unauthorized'];
         }
-        
+
         $data = json_decode(file_get_contents('php://input'), true);
-        
+
         if (!isset($data['account_id']) || !isset($data['amount'])) {
             return ['success' => false, 'error' => 'Missing required fields'];
         }
-        
+
         // Verify account ownership
         if (!$this->verify_account_ownership($data['account_id'], $status->user_info['user_id']) && $status->permission != 'admin') {
             return ['success' => false, 'error' => 'Access denied'];
         }
-        
+
+        // Get audit trail information
+        $ip_address = $_SERVER['REMOTE_ADDR'] ?? null;
+        $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+
         return $this->transaction_model->deposit(
             $data['account_id'],
             $data['amount'],
-            $data['description'] ?? ''
+            $data['description'] ?? '',
+            $ip_address,
+            $user_agent
         );
     }
     
@@ -53,22 +59,31 @@ class transaction_controller {
         if (!$status->is_login) {
             return ['success' => false, 'error' => 'Unauthorized'];
         }
-        
+
         $data = json_decode(file_get_contents('php://input'), true);
-        
+
         if (!isset($data['account_id']) || !isset($data['amount'])) {
             return ['success' => false, 'error' => 'Missing required fields'];
         }
-        
+
         // Verify account ownership
         if (!$this->verify_account_ownership($data['account_id'], $status->user_info['user_id']) && $status->permission != 'admin') {
             return ['success' => false, 'error' => 'Access denied'];
         }
-        
+
+        // Get audit trail information
+        $ip_address = $_SERVER['REMOTE_ADDR'] ?? null;
+        $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+
         return $this->transaction_model->withdraw(
             $data['account_id'],
             $data['amount'],
-            $data['description'] ?? ''
+            $data['description'] ?? '',
+            null, // payee_id
+            null, // payee_name
+            null, // payee_code
+            $ip_address,
+            $user_agent
         );
     }
     
@@ -95,11 +110,17 @@ class transaction_controller {
             return ['success' => false, 'error' => 'Destination account not found'];
         }
 
+        // Get audit trail information
+        $ip_address = $_SERVER['REMOTE_ADDR'] ?? null;
+        $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+
         return $this->transaction_model->transfer(
             $data['from_account_id'],
             $to_account_result['account']['account_id'],
             $data['amount'],
-            $data['description'] ?? ''
+            $data['description'] ?? '',
+            $ip_address,
+            $user_agent
         );
     }
 
@@ -119,7 +140,7 @@ class transaction_controller {
             return ['success' => false, 'error' => 'Access denied'];
         }
 
-        // Get payee details
+        // Get payee details to snapshot in transaction
         $payee_result = $this->payee_model->get_payee_by_id($data['payee_id']);
 
         if (!$payee_result['success']) {
@@ -133,25 +154,39 @@ class transaction_controller {
             return ['success' => false, 'error' => 'Payee is not active'];
         }
 
-        // Get payee's account
-        $payee_account_result = $this->account_model->get_account_by_number($payee['account_number']);
+        // Build description with all payee details for historical record
+        // This preserves the payee information even if it changes later in the bill_payee table
+        $description = sprintf(
+            'Bill Payment - %s (%s) - Category: %s',
+            $payee['payee_name'],
+            $payee['payee_code'],
+            $payee['payee_category']
+        );
 
-        if (!$payee_account_result['success']) {
-            return ['success' => false, 'error' => 'Payee account not found'];
+        // Add bill reference number if provided
+        if (!empty($data['bill_reference'])) {
+            $description .= ' - Bill Ref: ' . $data['bill_reference'];
         }
 
-        // Create description with payee name
-        $description = 'Bill payment to ' . $payee['payee_name'];
+        // Add any additional notes from user
         if (!empty($data['description'])) {
             $description .= ' - ' . $data['description'];
         }
 
-        // Use transfer method to complete the payment
-        return $this->transaction_model->transfer(
+        // Get audit trail information
+        $ip_address = $_SERVER['REMOTE_ADDR'] ?? null;
+        $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+
+        // Process as paybill transaction with denormalized payee information
+        return $this->transaction_model->paybill(
             $data['from_account_id'],
-            $payee_account_result['account']['account_id'],
             $data['amount'],
-            $description
+            $payee['payee_id'],
+            $payee['payee_name'],
+            $payee['payee_code'],
+            $description,
+            $ip_address,
+            $user_agent
         );
     }
 

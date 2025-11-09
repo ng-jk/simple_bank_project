@@ -2,7 +2,7 @@
 
 class user_model {
     private $mysqli;
-    
+
     public function __construct($mysqli) {
         $this->mysqli = $mysqli;
     }
@@ -12,18 +12,18 @@ class user_model {
         if (empty($user_name) || empty($user_email) || empty($password)) {
             return ['success' => false, 'error' => 'All fields are required'];
         }
-        
+
         if (!filter_var($user_email, FILTER_VALIDATE_EMAIL)) {
             return ['success' => false, 'error' => 'Invalid email format'];
         }
-        
+
         // Hash password
         $hashed_password = password_hash($password, PASSWORD_BCRYPT);
-        
+
         // Insert user
         $stmt = $this->mysqli->prepare("INSERT INTO system_user (user_name, user_email, user_password, user_role) VALUES (?, ?, ?, ?)");
         $stmt->bind_param('ssss', $user_name, $user_email, $hashed_password, $role);
-        
+
         if ($stmt->execute()) {
             $user_id = $stmt->insert_id;
             $stmt->close();
@@ -38,11 +38,11 @@ class user_model {
         $stmt->bind_param('i', $user_id);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($row = $result->fetch_assoc()) {
             return ['success' => true, 'user' => $row];
         }
-        
+
         return ['success' => false, 'error' => 'User not found'];
     }
     
@@ -51,24 +51,24 @@ class user_model {
         $stmt->bind_param('s', $user_name);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($row = $result->fetch_assoc()) {
             return ['success' => true, 'user' => $row];
         }
-        
+
         return ['success' => false, 'error' => 'User not found'];
     }
-    
+
     public function get_user_by_email($user_email) {
         $stmt = $this->mysqli->prepare("SELECT * FROM system_user WHERE user_email = ?");
         $stmt->bind_param('s', $user_email);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($row = $result->fetch_assoc()) {
             return ['success' => true, 'user' => $row];
         }
-        
+
         return ['success' => false, 'error' => 'User not found'];
     }
     
@@ -102,22 +102,22 @@ class user_model {
                 $types .= 's';
             }
         }
-        
+
         if (empty($updates)) {
             return ['success' => false, 'error' => 'No valid fields to update'];
         }
-        
+
         $params[] = $user_id;
         $types .= 'i';
-        
+
         $sql = "UPDATE system_user SET " . implode(', ', $updates) . " WHERE user_id = ?";
         $stmt = $this->mysqli->prepare($sql);
         $stmt->bind_param($types, ...$params);
-        
+
         if ($stmt->execute()) {
             return ['success' => true];
         }
-        
+
         return ['success' => false, 'error' => $stmt->error];
     }
     
@@ -137,12 +137,12 @@ class user_model {
         $stmt->bind_param('ii', $limit, $offset);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         $users = [];
         while ($row = $result->fetch_assoc()) {
             $users[] = $row;
         }
-        
+
         return ['success' => true, 'users' => $users];
     }
 }

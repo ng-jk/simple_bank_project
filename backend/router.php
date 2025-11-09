@@ -241,6 +241,12 @@ if ($request_uri == '/admin') {
     exit;
 }
 
+// Register redirect - /register redirects to /register_otp
+if ($request_uri == '/register') {
+    header('Location: /register_otp');
+    exit;
+}
+
 // Frontend page routes
 $page_routes = [
     '/' => 'frontend/index.html',
