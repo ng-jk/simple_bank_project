@@ -407,7 +407,7 @@
         
         function displayTransactions(transactions) {
             const container = document.getElementById('transactions-container');
-            
+
             if (transactions.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
@@ -417,13 +417,13 @@
                 `;
                 return;
             }
-            
+
             container.innerHTML = '';
-            
+
             transactions.forEach(transaction => {
                 const item = document.createElement('div');
                 item.className = 'transaction-item';
-                
+
                 const icon = getTransactionIcon(transaction.transaction_type);
                 // Determine if amount is positive based on the actual amount value
                 const isPositive = parseFloat(transaction.amount) >= 0;
@@ -432,14 +432,29 @@
                 const date = new Date(transaction.created_at);
                 const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
 
+                // Build description with transfer details
+                let descriptionHtml = '';
+                if (transaction.transaction_type === 'transfer') {
+                    if (isPositive) {
+                        // Incoming transfer - show source account
+                        descriptionHtml = `<p><strong>Transfer from:</strong> ${transaction.account_number || 'Unknown'}</p>`;
+                    } else {
+                        // Outgoing transfer - show destination account
+                        descriptionHtml = `<p><strong>Transfer to:</strong> ${transaction.destination_account_number || 'Unknown'}</p>`;
+                    }
+                }
+                if (transaction.description) {
+                    descriptionHtml += `<p>${transaction.description}</p>`;
+                }
+                descriptionHtml += `<p style="font-size: 0.85em; color: #aaa;">Ref: ${transaction.reference_number}</p>`;
+
                 item.innerHTML = `
                     <div class="transaction-icon icon-${transaction.transaction_type}">
                         ${icon}
                     </div>
                     <div class="transaction-info">
                         <h3>${transaction.transaction_type.charAt(0).toUpperCase() + transaction.transaction_type.slice(1)}</h3>
-                        <p>${transaction.description || 'No description'}</p>
-                        <p>Ref: ${transaction.reference_number}</p>
+                        ${descriptionHtml}
                     </div>
                     <div class="transaction-amount ${isPositive ? 'amount-positive' : 'amount-negative'}">
                         ${isPositive ? '+' : '-'}${transaction.currency} ${absoluteAmount.toFixed(2)}
@@ -448,7 +463,7 @@
                         ${formattedDate}
                     </div>
                 `;
-                
+
                 container.appendChild(item);
             });
         }

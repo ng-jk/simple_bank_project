@@ -197,7 +197,7 @@ class transaction_model {
                 )
             ");
             $stmt->bind_param(
-                'issssssssisssss',
+                'isssssssssissss',
                 $account_id,
                 $account_number, $this->encryption_key,
                 $type,
@@ -236,11 +236,12 @@ class transaction_model {
         $this->mysqli->begin_transaction();
 
         try {
-            // Get both account balances and account numbers (decrypt)
+            // Get both account balances, account numbers, and currency (decrypt)
             $stmt = $this->mysqli->prepare("
                 SELECT
                     AES_DECRYPT(balance, ?) as balance,
-                    AES_DECRYPT(account_number, ?) as account_number
+                    AES_DECRYPT(account_number, ?) as account_number,
+                    currency
                 FROM bank_account
                 WHERE account_id = ? AND status = 'active'
                 FOR UPDATE
@@ -256,6 +257,7 @@ class transaction_model {
             $from_row = $result->fetch_assoc();
             $from_balance = (float)$from_row['balance'];
             $from_account_number = $from_row['account_number'];
+            $from_currency = $from_row['currency'];
 
             if ($from_balance < $amount) {
                 throw new Exception('Insufficient funds');
@@ -264,7 +266,8 @@ class transaction_model {
             $stmt = $this->mysqli->prepare("
                 SELECT
                     AES_DECRYPT(balance, ?) as balance,
-                    AES_DECRYPT(account_number, ?) as account_number
+                    AES_DECRYPT(account_number, ?) as account_number,
+                    currency
                 FROM bank_account
                 WHERE account_id = ? AND status = 'active'
                 FOR UPDATE
@@ -280,6 +283,12 @@ class transaction_model {
             $to_row = $result->fetch_assoc();
             $to_balance = (float)$to_row['balance'];
             $to_account_number = $to_row['account_number'];
+            $to_currency = $to_row['currency'];
+
+            // Validate that both accounts have the same currency
+            if ($from_currency !== $to_currency) {
+                throw new Exception('Cannot transfer between accounts with different currencies. Source account is in ' . $from_currency . ' and destination account is in ' . $to_currency);
+            }
 
             // Update balances (encrypt)
             $new_from_balance = $from_balance - $amount;
@@ -340,7 +349,7 @@ class transaction_model {
                 )
             ");
             $stmt->bind_param(
-                'issssssssisssss',
+                'issssssssssisss',
                 $from_account_id,
                 $from_account_number, $this->encryption_key,
                 $type,
@@ -447,7 +456,7 @@ class transaction_model {
                 )
             ");
             $stmt->bind_param(
-                'issssssssisssss',
+                'isssssssssissss',
                 $account_id,
                 $account_number, $this->encryption_key,
                 $type,

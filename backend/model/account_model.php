@@ -31,7 +31,7 @@ class account_model {
         return $account_number;
     }
     
-    public function create_account($user_id, $account_type = 'checking', $currency = 'RM') {
+    public function create_account($user_id, $account_type = 'savings', $currency = 'RM') {
         $account_number = $this->generate_account_number();
 
         if ($account_number === null) {

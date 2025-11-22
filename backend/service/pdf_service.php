@@ -222,6 +222,23 @@ class PDFService {
         $reference = $transaction['reference_number'];
 
         $formatted = $type . "\n";
+
+        // Add transfer account information
+        if ($transaction['transaction_type'] === 'transfer') {
+            $amount = floatval($transaction['amount']);
+            if ($amount > 0) {
+                // Incoming transfer - show source account
+                if (!empty($transaction['account_number'])) {
+                    $formatted .= "FROM: " . $transaction['account_number'] . "\n";
+                }
+            } else {
+                // Outgoing transfer - show destination account
+                if (!empty($transaction['destination_account_number'])) {
+                    $formatted .= "TO: " . $transaction['destination_account_number'] . "\n";
+                }
+            }
+        }
+
         if (!empty($description)) {
             $formatted .= wordwrap($description, 50, "\n") . "\n";
         }
